@@ -1,3 +1,4 @@
+from datetime import date
 import psycopg2
 
 class Conexao(object):    
@@ -38,7 +39,29 @@ def resgatar_clans() -> list:
     db.fechar()
     return nomes
 
-def adicionar_estatisticas(lista: list):
+def resgatar_ultimo_dxp() -> list[date]:
+    db = Conexao()
+    data = db.consultar("SELECT * FROM dxp ORDER BY data_comeco")[0][1]
+    db.fechar()
+    return data.strftime("%m/%d/%Y")
+
+def verificar_dxp(data_comeco: date, data_fim: date) -> bool:
+    db = Conexao()
+    data_ocupada = db.consultar(
+        f"SELECT * FROM dxp WHERE data_comeco >= '{data_comeco}' AND data_fim < '{data_fim}'"
+    )
+    db.fechar()
+    return True if data_ocupada else False
+
+def adicionar_dxp(data_comeco: date, data_fim: date) -> None:
+    db = Conexao()
+    db.manipular(
+        f"INSERT INTO dxp (data_comeco, data_fim) \
+            VALUES ('{data_comeco}', '{data_fim}')"
+    )
+    db.fechar()
+
+def adicionar_estatisticas(lista: list) -> None:
     db = Conexao()
     for clan in lista:
         db.manipular(

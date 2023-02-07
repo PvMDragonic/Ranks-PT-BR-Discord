@@ -7,6 +7,7 @@ import time
 
 import nomes_scrapper
 import exp_scrapper
+import backend
 
 with open("token.txt", 'r') as file:
     TOKEN = file.readline()
@@ -33,6 +34,51 @@ def loop_mensal():
 
         if datetime.date.today().day == 1:
             nomes_scrapper.buscar_clans()
+
+@bot.command()
+async def dxp(ctx, *args):
+    return await ctx.message.channel.send(
+        f"O último DXP foi em: `{backend.resgatar_ultimo_dxp()}` {ctx.message.author.mention}."
+    )
+
+@bot.command()
+async def criar(ctx, *args):
+    if not "dxp" in ctx.message.content:
+        raise CommandNotFound
+
+    try:
+        # o _ é pra desempacotar o 'dxp' que vem junto do comando.
+        _, comeco_ano, comeco_mes, comeco_dia, fim_ano, fim_mes, fim_dia = args
+    except ValueError:
+        return await ctx.message.channel.send(
+            f"Você não especificou todos os valores necessários para estabelecer a(s) data(s)! Use o formato `YYYY-MM-DD` {ctx.message.author.mention}."
+        )
+    
+    try:
+        data_comeco = datetime.date(
+            int(comeco_ano), 
+            int(comeco_mes), 
+            int(comeco_dia)
+        )
+        data_fim = datetime.date(
+            int(fim_ano), 
+            int(fim_mes), 
+            int(fim_dia)
+        )
+    except ValueError:
+        return await ctx.message.channel.send(
+            f"Você não inseriu uma data correta {ctx.message.author.mention}!"
+        )
+
+    if backend.verificar_dxp(data_comeco, data_fim):
+        return await ctx.message.channel.send(
+            f"Já há um DXP registrado cujas datas coincidem com o período entre `{data_comeco}` e `{data_fim}`, {ctx.message.author.mention}!"
+        )
+
+    backend.adicionar_dxp(data_comeco, data_fim)
+    await ctx.message.channel.send(
+        f"Double XP para as datas entre `{data_comeco}` e `{data_fim}` registrado com sucesso {ctx.message.author.mention}!"
+    )
 
 @bot.event
 async def on_ready():
