@@ -6,6 +6,7 @@ import discord
 import time
 
 import nomes_scrapper
+import exp_scrapper
 
 with open("token.txt", 'r') as file:
     TOKEN = file.readline()
@@ -13,6 +14,18 @@ with open("token.txt", 'r') as file:
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix = commands.when_mentioned, intents = intents)    
+
+def loop_diario():
+    NOVE = datetime.time(9)
+    NOVE_MEIA = datetime.time(9, 30)
+
+    while True:
+        time.sleep(300)
+
+        # Calibra automaticamente pra sempre rodar logo após as 9 da manhã.
+        if NOVE <= datetime.datetime.now().time() <= NOVE_MEIA:
+            exp_scrapper.buscar_clans()
+            time.sleep(84000)
 
 def loop_mensal():
     while True:
@@ -48,5 +61,6 @@ async def on_message(message):
     await bot.process_commands(message)
 
 if __name__ == '__main__':
+    threading.Thread(target = loop_diario).start()
     threading.Thread(target = loop_mensal).start()
     bot.run(TOKEN)
