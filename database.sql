@@ -12,9 +12,13 @@ CREATE TABLE dxp (
     data_fim DATE
 );
 
-CREATE TABLE exp (
+CREATE TABLE estatisticas (
     id SERIAL PRIMARY KEY,
     id_clan INTEGER REFERENCES clans (id),
-    data_hora TIMESTAMP,
-    exp BIGINT 
+    data_hora TIMESTAMP
+    membros INT,
+    nv_fort INT,
+    nv_total INT,
+    nv_cb_total INT,
+    exp_total BIGINT 
 );
