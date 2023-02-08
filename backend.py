@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime, date
 import psycopg2
 
 class Conexao(object):    
@@ -10,16 +10,14 @@ class Conexao(object):
             password = 123456
         )
 
-    def manipular(self, sql) -> bool:
+    def manipular(self, sql) -> None:
         try:
             cur = self._db.cursor()
             cur.execute(sql)
             cur.close()
             self._db.commit()
-            return True
         except Exception as e:
             print(e)
-            return False
 
     def consultar(self, sql) -> list[tuple]:
         try:
@@ -33,9 +31,24 @@ class Conexao(object):
     def fechar(self):
         self._db.close()
 
-def resgatar_clans() -> list:
+class Estatisticas():
+    def __init__(self, clan_id, membros, nv_fort, nv_total, exp_total, nv_cb_total) -> None:
+        self.data_hora = datetime.now()
+        self.clan_id = clan_id
+        self.membros = membros
+        self.nv_fort = nv_fort
+        self.nv_total = nv_total
+        self.exp_total = exp_total
+        self.nv_cb_total = nv_cb_total
+
+class Clan():
+    def __init__(self, tupla) -> None:
+        self.id, self.nome = tupla
+
+def resgatar_clans() -> list[Clan]:
     db = Conexao()
     nomes = db.consultar("SELECT * FROM clans")
+    nomes = [Clan(clan) for clan in nomes]
     db.fechar()
     return nomes
 

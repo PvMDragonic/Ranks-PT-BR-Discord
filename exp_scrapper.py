@@ -1,25 +1,10 @@
 from threading import Thread
 from lxml import html
 import requests
-import datetime
 
 import backend
 
-class Estatisticas():
-    def __init__(self, clan_id, membros, nv_fort, nv_total, exp_total, nv_cb_total) -> None:
-        self.data_hora = datetime.datetime.now()
-        self.clan_id = clan_id
-        self.membros = membros
-        self.nv_fort = nv_fort
-        self.nv_total = nv_total
-        self.exp_total = exp_total
-        self.nv_cb_total = nv_cb_total
-
-class Clan():
-    def __init__(self, tupla) -> None:
-        self.id, self.nome = tupla
-
-def atualizar_exp(clans: list[Clan]):
+def atualizar_exp(clans: list[backend.Clan]):
     estatisticas = []
 
     for clan in clans:
@@ -37,7 +22,7 @@ def atualizar_exp(clans: list[Clan]):
         nv_fort = [elem.replace(".", "") for elem in quadro_visao_geral[11].text_content().split("\n") if elem.replace(".", "").isnumeric()][0]
 
         estatisticas.append(
-            Estatisticas(
+            backend.Estatisticas(
                 clan.id,
                 membros,
                 nv_fort,
@@ -53,7 +38,6 @@ def buscar_clans():
     PARTES = 3
 
     clans = backend.resgatar_clans()
-    clans = [Clan(clan) for clan in clans]
     clans = [clans[i::PARTES] for i in range(PARTES)]
 
     for i in range(PARTES):
