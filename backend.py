@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import psycopg2
 
 class Conexao(object):    
@@ -32,49 +32,164 @@ class Conexao(object):
         self._db.close()
 
 class Estatisticas():
-    def __init__(self, clan_id, membros, nv_fort, nv_total, exp_total, nv_cb_total) -> None:
-        self.data_hora = datetime.now()
-        self.clan_id = clan_id
-        self.membros = membros
-        self.nv_fort = nv_fort
-        self.nv_total = nv_total
-        self.exp_total = exp_total
-        self.nv_cb_total = nv_cb_total
+    def __init__(self, *args) -> None:
+        self.clan_id, self.data_hora, self.membros, self.nv_fort, self.nv_total, self.nv_cb_total, self.exp_total = args
 
 class Clan():
-    def __init__(self, tupla) -> None:
-        self.id, self.nome = tupla
+    def __init__(self, *args) -> None:
+        self.id, self.nome = args
 
 def resgatar_clans() -> list[Clan]:
-    db = Conexao()
-    nomes = db.consultar("SELECT * FROM clans")
-    nomes = [Clan(clan) for clan in nomes]
-    db.fechar()
-    return nomes
+    try:
+        db = Conexao()
+        return [Clan(*clan) for clan in db.consultar("SELECT * FROM clans")]
+    finally:
+        db.fechar()
 
-def resgatar_ultimo_dxp() -> list[date]:
-    db = Conexao()
-    data = db.consultar("SELECT * FROM dxp ORDER BY data_comeco")[0][1]
-    db.fechar()
-    return data.strftime("%m/%d/%Y")
+def resgatar_rank_geral() -> list[Estatisticas]:
+    try:
+        db = Conexao()
+        return [
+            Estatisticas(*clan) for clan in db.consultar(
+                "SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
+                FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
+                ORDER BY nome, data_hora DESC"
+            )
+        ]
+    finally:
+        db.fechar()
+
+def resgatar_rank_mensal():
+    try:
+        db = Conexao()
+        
+        atual = [
+            Estatisticas(*clan) for clan in db.consultar(
+                "SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
+                FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
+                ORDER BY nome, data_hora DESC"
+            )
+        ]
+
+        mes_passado = atual[0].data_hora.date() - timedelta(days = 30)
+
+        passado = [
+            Estatisticas(*clan) for clan in db.consultar(
+                f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
+                FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
+                WHERE data_hora BETWEEN '{mes_passado} 00:01:00' AND '{mes_passado} 23:59:00'"
+            )
+        ]
+
+        if not passado:
+            # Pega a data mais antiga disponível.
+            passado = [
+                Estatisticas(*clan) for clan in db.consultar(
+                    "SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
+                    FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id"
+                )
+            ]
+
+        return [
+            Estatisticas(
+                a.clan_id,
+                a.data_hora.date(),
+                a.membros - p.membros,
+                a.nv_fort - p.nv_fort,
+                a.nv_total - p.nv_total,
+                a.nv_cb_total - p.nv_cb_total,
+                a.exp_total - p.exp_total
+            ) for a, p in zip(atual, passado)
+        ]
+
+    finally:
+        db.fechar()
+
+def resgatar_rank_dxp():
+    try:
+        db = Conexao()
+
+        query = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")
+        double_atual = query[0]
+        inicio = double_atual[1]
+        hoje = datetime.now().date()
+
+        # Double ainda não passou.
+        if inicio > hoje:
+
+            # Se o primeiro DXP do banco de dados ainda está pra vir.
+            if len(query) == 1:
+                return None
+
+            # Se há mais de um DXP registrados no banco de dados.
+            else:
+                ultimo_double = query[1]
+                inicio = ultimo_double[1]
+                fim = ultimo_double[2]
+
+        # Data de início já passou.
+        else:
+            fim = double_atual[2]
+
+            # Double começou mas não terminou ainda.
+            if fim > hoje:
+                fim = hoje
+            
+        xp_inicio = [
+            Estatisticas(*clan) for clan in db.consultar(
+                f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
+                FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
+                WHERE data_hora BETWEEN '{inicio} 09:00:00' AND '{inicio} 09:59:00'"
+            )
+        ]
+
+        xp_fim = [
+            Estatisticas(*clan) for clan in db.consultar(
+                f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
+                FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
+                WHERE data_hora BETWEEN '{fim} 09:00:00' AND '{fim} 09:59:00'"
+            )
+        ]
+
+        return [
+            Estatisticas(
+                f.clan_id,
+                f.data_hora.date(),
+                f.membros - i.membros,
+                f.nv_fort - i.nv_fort,
+                f.nv_total - i.nv_total,
+                f.nv_cb_total - i.nv_cb_total,
+                f.exp_total - i.exp_total
+            ) for f, i in zip(xp_fim, xp_inicio)
+        ]
+
+    finally:
+        db.fechar()
+
+def resgatar_ultimo_dxp() -> date:
+    try:
+        db = Conexao()
+        return db.consultar("SELECT * FROM dxp ORDER BY data_comeco")[0][1]
+    finally:
+        db.fechar()
 
 def verificar_dxp(data_comeco: date, data_fim: date) -> bool:
-    db = Conexao()
-    data_ocupada = db.consultar(
-        f"SELECT * FROM dxp WHERE data_comeco >= '{data_comeco}' AND data_fim < '{data_fim}'"
-    )
-    db.fechar()
-    return True if data_ocupada else False
+    try:
+        db = Conexao()
+        return db.consultar(
+            f"SELECT * FROM dxp WHERE data_comeco >= '{data_comeco}' AND data_fim < '{data_fim}'"
+        )
+    finally:
+        db.fechar()
 
 def adicionar_dxp(data_comeco: date, data_fim: date) -> None:
     db = Conexao()
     db.manipular(
-        f"INSERT INTO dxp (data_comeco, data_fim) \
-            VALUES ('{data_comeco}', '{data_fim}')"
+        f"INSERT INTO dxp (data_comeco, data_fim) VALUES ('{data_comeco}', '{data_fim}')"
     )
     db.fechar()
 
-def adicionar_estatisticas(lista: list) -> None:
+def adicionar_estatisticas(lista: list[Estatisticas]) -> None:
     db = Conexao()
     for clan in lista:
         db.manipular(

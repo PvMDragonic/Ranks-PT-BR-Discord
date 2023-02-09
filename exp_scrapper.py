@@ -1,3 +1,4 @@
+from datetime import datetime
 from threading import Thread
 from lxml import html
 import requests
@@ -24,6 +25,7 @@ def atualizar_exp(clans: list[backend.Clan]):
         estatisticas.append(
             backend.Estatisticas(
                 clan.id,
+                datetime.now(),
                 membros,
                 nv_fort,
                 nv_total,

@@ -4,6 +4,7 @@ import threading
 import datetime
 import discord
 import time
+import io
 
 import nomes_scrapper
 import exp_scrapper
@@ -42,8 +43,32 @@ async def dxp(ctx, *args):
     )
 
 @bot.command()
+async def rank(ctx, *args):
+    if "geral" in args:
+        dados = backend.resgatar_rank_geral()
+        dados = sorted(dados, reverse = True, key = lambda x: x.exp_total)
+        dados = [' — '.join([
+                f'{index + 1}º', 
+                f'{clan.clan_id}'.replace("+", " "), 
+                f'{clan.exp_total:,}'.replace(",",".")
+            ]) for index, clan in enumerate(dados)]
+        txt = '\n'.join(dados)
+
+        await ctx.channel.send(
+            content = "Rank Geral", file = discord.File(fp = io.StringIO(txt), filename = "Rank Geral.txt")
+        )
+    '''elif "mensal" in args:
+
+    elif "dxp" in args:
+
+    else:
+        await ctx.message.channel.send(
+            f"Você precisa especificar o tipo de rank, {ctx.message.author.mention}! Use:\n> `rank geral`;\n> `rank mensal`;\n> `rank dxp`"
+        )'''
+
+@bot.command()
 async def criar(ctx, *args):
-    if not "dxp" in ctx.message.content:
+    if not "dxp" in args:
         raise CommandNotFound
 
     try:
