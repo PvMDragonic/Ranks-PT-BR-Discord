@@ -27,7 +27,12 @@ def loop_diario():
         # Calibra automaticamente pra sempre rodar logo após as 9 da manhã.
         if NOVE <= datetime.datetime.now().time() <= NOVE_MEIA:
             exp_scrapper.buscar_clans()
-            time.sleep(84000)
+
+            # Refresh de hora em hora durante DXP.
+            if backend.dxp_acontecendo():
+                time.sleep(3300)
+            else:
+                time.sleep(84000)
 
 def loop_mensal():
     while True:
@@ -38,33 +43,93 @@ def loop_mensal():
 
 @bot.command()
 async def dxp(ctx, *args):
-    return await ctx.message.channel.send(
-        f"O último DXP foi em: `{backend.resgatar_ultimo_dxp()}` {ctx.message.author.mention}."
-    )
+    inicio_dxp = backend.resgatar_data_dxp()[1]
+
+    if backend.dxp_acontecendo():
+        ranks = backend.resgatar_rank_dxp()
+
+        ranks = sorted(
+            ranks, 
+            reverse = True, 
+            key = lambda x: x.exp_total
+        )[0:9]
+
+        embed = discord.Embed(
+            title = f"EXP EM DOBRO {inicio_dxp.date()}!!", 
+            description = f"__Top 10 clãs:__", 
+            color = 0x7a8ff5)
+        for index, clan in enumerate(ranks):
+            embed.add_field(
+                name = f'*{index + 1}º — {clan.clan_id.replace("+", " ")}*', 
+                value = f'{clan.exp_total:,}'.replace(",","."), 
+                inline = False
+            )
+        embed.add_field(name = "\n", value = "Para o rank completo, use **@Ranks PT-BR rank dxp**.", inline = False)
+    
+        await ctx.message.channel.send(embed = embed)
+    else:
+        hoje = datetime.datetime.now().date()
+
+        # Double ainda não passou.
+        if inicio_dxp > hoje:
+            embed = discord.Embed(
+                title = f"Nenhum EXP em Dobro ativo no momento.", 
+                description = f"O próximo DXP será em __{inicio_dxp}__ às __09:00:00 BSB__.", 
+                color = 0x7a8ff5)
+            embed.add_field(name = "", value = "Para o rank completo do último DXP, use **@Ranks PT-BR rank dxp**.", inline = False)
+
+            await ctx.message.channel.send(embed = embed)
+        else:
+            embed = discord.Embed(
+                title = f"Nenhum EXP em Dobro ativo no momento.", 
+                description = f"O próximo DXP __ainda não foi anunciado__.", 
+                color = 0x7a8ff5)
+            embed.add_field(name = "", value = "Para o rank completo do último DXP, use **@Ranks PT-BR rank dxp**.", inline = False)
+            
+            await ctx.message.channel.send(embed = embed)
 
 @bot.command()
 async def rank(ctx, *args):
-    if "geral" in args:
-        dados = backend.resgatar_rank_geral()
-        dados = sorted(dados, reverse = True, key = lambda x: x.exp_total)
-        dados = [' — '.join([
+    async def enviar_mensagem(tipo, dados):
+        dados = sorted(
+            dados, 
+            reverse = True, 
+            key = lambda x: x.exp_total
+        )
+
+        dados = [
+            ' — '.join([
                 f'{index + 1}º', 
                 f'{clan.clan_id}'.replace("+", " "), 
                 f'{clan.exp_total:,}'.replace(",",".")
-            ]) for index, clan in enumerate(dados)]
-        txt = '\n'.join(dados)
+            ]) for index, clan in enumerate(dados)
+        ]
+
+        dados = '\n'.join(dados)
 
         await ctx.channel.send(
-            content = "Rank Geral", file = discord.File(fp = io.StringIO(txt), filename = "Rank Geral.txt")
+            content = f"{ctx.message.author.mention}", 
+            file = discord.File(fp = io.StringIO(dados), 
+            filename = "Rank Geral.txt")
         )
-    '''elif "mensal" in args:
 
+    if "geral" in args:
+        await enviar_mensagem("Rank Geral", backend.resgatar_rank_geral())
+    elif "mensal" in args:
+        await enviar_mensagem("Rank Geral", backend.resgatar_rank_mensal())
     elif "dxp" in args:
-
+        dados = backend.resgatar_rank_dxp()
+        if dados:
+            await enviar_mensagem("Rank Geral", dados)
+        else:
+            await ctx.message.channel.send(
+                f"Não há histórico de DXP para exibir, {ctx.message.author.mention}. Para ver informações sobre futuros Double EXP, use `@Ranks PT-BR dxp`."
+            )
     else:
         await ctx.message.channel.send(
-            f"Você precisa especificar o tipo de rank, {ctx.message.author.mention}! Use:\n> `rank geral`;\n> `rank mensal`;\n> `rank dxp`"
-        )'''
+            f"Você precisa especificar o tipo de rank, {ctx.message.author.mention}! \
+                Use:\n> `rank geral`;\n> `rank mensal`;\n> `rank dxp`"
+        )
 
 @bot.command()
 async def criar(ctx, *args):

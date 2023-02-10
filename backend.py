@@ -68,7 +68,7 @@ def resgatar_rank_mensal():
                 "SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
                 FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
                 ORDER BY nome, data_hora DESC"
-            )
+            ) 
         ]
 
         mes_passado = atual[0].data_hora.date() - timedelta(days = 30)
@@ -99,7 +99,8 @@ def resgatar_rank_mensal():
                 a.nv_total - p.nv_total,
                 a.nv_cb_total - p.nv_cb_total,
                 a.exp_total - p.exp_total
-            ) for a, p in zip(atual, passado)
+            ) for a, p in zip(atual, passado) 
+            if a.exp_total - p.exp_total > 0
         ]
 
     finally:
@@ -166,10 +167,10 @@ def resgatar_rank_dxp():
     finally:
         db.fechar()
 
-def resgatar_ultimo_dxp() -> date:
+def resgatar_data_dxp() -> date:
     try:
         db = Conexao()
-        return db.consultar("SELECT * FROM dxp ORDER BY data_comeco")[0][1]
+        return db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")[0]
     finally:
         db.fechar()
 
@@ -177,8 +178,18 @@ def verificar_dxp(data_comeco: date, data_fim: date) -> bool:
     try:
         db = Conexao()
         return db.consultar(
-            f"SELECT * FROM dxp WHERE data_comeco >= '{data_comeco}' AND data_fim < '{data_fim}'"
+            f"SELECT * FROM dxp WHERE (data_comeco <= '{data_fim}') and ('{data_comeco}' <= data_fim);"
         )
+    finally:
+        db.fechar()
+
+def dxp_acontecendo() -> bool:
+    try:
+        db = Conexao()
+        datas_dxp = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")[0]
+        inicio = datas_dxp[1]
+        fim = datas_dxp[2]
+        return fim > datetime.now().date() > inicio
     finally:
         db.fechar()
 
