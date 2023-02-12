@@ -86,7 +86,8 @@ def resgatar_rank_mensal():
             passado = [
                 Estatisticas(*clan) for clan in db.consultar(
                     "SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
-                    FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id"
+                    FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
+                    ORDER BY nome, data_hora"
                 )
             ]
 
@@ -100,7 +101,7 @@ def resgatar_rank_mensal():
                 a.nv_cb_total - p.nv_cb_total,
                 a.exp_total - p.exp_total
             ) for a, p in zip(atual, passado) 
-            if a.exp_total - p.exp_total > 0
+            if a.exp_total - p.exp_total != 0
         ]
 
     finally:
