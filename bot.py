@@ -170,6 +170,10 @@ async def criar(ctx, *args):
         f"Double XP para as datas entre `{data_comeco}` e `{data_fim}` registrado com sucesso {ctx.message.author.mention}!"
     )
 
+    msg = f"[{datetime.now()}] DXP registrado de {data_comeco} até {data_fim} por {ctx.message.author}."
+    backend.adicionar_log(msg)
+    print(msg)
+
 @bot.event
 async def on_ready():
     await bot.change_presence(activity = discord.Game(name = 'Marca o bot p/ cmd'))
@@ -185,16 +189,21 @@ async def on_command_error(ctx, error):
 
 @bot.event
 async def on_message(message):
-    if message.content == "<@1071957068262674582>":
-        return await message.channel.send(
-            f"Segue abaixo a lista de comandos:\
-                \n> `@Ranks PT-BR dxp` — Informações sobre o Double XP;\
-                \n> `@Ranks PT-BR rank geral` — Lista com o rank de todos os clãs pt-br;\
-                \n> `@Ranks PT-BR rank mensal` — Lista com o rank do último mês de todos os clãs pt-br ativos;\
-                \n> `@Ranks PT-BR rank dxp` — Lista com o rank de Doubles passados dos clãs pt-br ativos."
-        )
-     
-    await bot.process_commands(message)
+    try:
+        if message.content == "<@1071957068262674582>":
+            return await message.channel.send(
+                f"Segue abaixo a lista de comandos:\
+                    \n> `@Ranks PT-BR dxp` — Informações sobre o Double XP;\
+                    \n> `@Ranks PT-BR rank geral` — Lista com o rank de todos os clãs pt-br;\
+                    \n> `@Ranks PT-BR rank mensal` — Lista com o rank do último mês de todos os clãs pt-br ativos;\
+                    \n> `@Ranks PT-BR rank dxp` — Lista com o rank de Doubles passados dos clãs pt-br ativos."
+            )
+        
+        await bot.process_commands(message)
+    except discord.errors.Forbidden as e:
+        msg = f"[{datetime.datetime.now()}] Erro de permissão em {message.guild.name}: {e}"
+        backend.adicionar_log(msg)
+        print(msg)
 
 if __name__ == '__main__':
     threading.Thread(target = loop_diario).start()

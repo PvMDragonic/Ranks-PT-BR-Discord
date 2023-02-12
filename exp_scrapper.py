@@ -45,5 +45,20 @@ def buscar_clans():
     clans = backend.resgatar_clans()
     clans = [clans[i::PARTES] for i in range(PARTES)]
 
-    for i in range(PARTES):
-       Thread(target = atualizar_exp, args = (clans[i], )).start()
+    msg = f"[{datetime.now()}] Iniciando scrapping de EXP..."
+    backend.adicionar_log(msg)
+    print(msg)
+
+    threads = [
+        Thread(target = atualizar_exp, args = (clans[i], )) for i in range(PARTES)
+    ]
+    
+    for t in threads:
+        t.start()
+
+    for t in threads:
+        t.join()
+
+    msg = f"[{datetime.now()}] Scrapping de EXP finalizado."
+    backend.adicionar_log(msg)
+    print(msg)

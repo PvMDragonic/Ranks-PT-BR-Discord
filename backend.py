@@ -216,3 +216,7 @@ def adicionar_clans(lista: list) -> None:
         if not db.consultar(f"SELECT 1 FROM clans WHERE nome='{nome}'"):
             db.manipular(f"INSERT INTO clans (nome) VALUES ('{nome}')")
     db.fechar()
+
+def adicionar_log(texto: str) -> None:
+    with open('log.txt', 'a') as arqv:
+        arqv.writelines(texto)

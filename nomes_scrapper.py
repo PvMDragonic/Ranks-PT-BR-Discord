@@ -1,5 +1,6 @@
 from multiprocessing import Process
 from threading import Thread
+from datetime import datetime
 from lxml import html
 import fasttext
 import requests
@@ -78,5 +79,20 @@ def buscar_clans():
     quantia_paginas = [num for num in range(quantia_paginas)]
     quantia_paginas = [quantia_paginas[i::PROCESSOS] for i in range(PROCESSOS)]
 
-    for i in range(PROCESSOS):
-        Process(target = processo, args = (quantia_paginas[i], )).start()
+    msg = f"[{datetime.now()}] Iniciando scrapping de clãs..."
+    backend.adicionar_log(msg)
+    print(msg)
+
+    processos = [
+        Process(target = processo, args = (quantia_paginas[i], )) for i in range(PROCESSOS)
+    ]
+
+    for p in processos:
+       p.start()
+
+    for p in processos:
+       p.join()
+
+    msg = f"[{datetime.now()}] Scrapping de clãs finalizado."
+    backend.adicionar_log(msg)
+    print(msg)
