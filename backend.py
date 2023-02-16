@@ -60,6 +60,10 @@ def resgatar_rank_geral() -> list[Estatisticas]:
         db.fechar()
 
 def resgatar_rank_mensal():
+    class Datas():
+        def __init__(self, *args) -> None:
+            self.data_atual, self.data_passado = args
+
     try:
         db = Conexao()
         
@@ -94,7 +98,7 @@ def resgatar_rank_mensal():
         return [
             Estatisticas(
                 a.clan_id,
-                a.data_hora.date(),
+                Datas(a.data_hora.date(), p.data_hora.date()),
                 a.membros - p.membros,
                 a.nv_fort - p.nv_fort,
                 a.nv_total - p.nv_total,
@@ -108,6 +112,10 @@ def resgatar_rank_mensal():
         db.fechar()
 
 def resgatar_rank_dxp():
+    class Datas():
+        def __init__(self, *args) -> None:
+            self.data_fim, self.data_inicio = args
+
     try:
         db = Conexao()
 
@@ -156,7 +164,7 @@ def resgatar_rank_dxp():
         return [
             Estatisticas(
                 f.clan_id,
-                f.data_hora.date(),
+                Datas(f.data_hora.date(), i.data_hora.date()),
                 f.membros - i.membros,
                 f.nv_fort - i.nv_fort,
                 f.nv_total - i.nv_total,
@@ -164,7 +172,6 @@ def resgatar_rank_dxp():
                 f.exp_total - i.exp_total
             ) for f, i in zip(xp_fim, xp_inicio)
         ]
-
     finally:
         db.fechar()
 

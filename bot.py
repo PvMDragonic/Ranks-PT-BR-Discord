@@ -90,7 +90,7 @@ async def dxp(ctx, *args):
 
 @bot.command()
 async def rank(ctx, *args):
-    async def enviar_mensagem(tipo, dados):
+    def formatar_mensagem(dados):
         dados = sorted(
             dados, 
             reverse = True, 
@@ -105,22 +105,31 @@ async def rank(ctx, *args):
             ]) for index, clan in enumerate(dados)
         ]
 
-        dados = '\n'.join(dados)
+        return '\n'.join(dados)
 
+    async def enviar_mensagem(dados, mensagem):
         await ctx.channel.send(
-            content = f"{ctx.message.author.mention}", 
-            file = discord.File(fp = io.StringIO(dados), 
-            filename = "Rank Geral.txt")
-        )
+                content = f"{msg} {ctx.message.author.mention}", 
+                file = discord.File(fp = io.StringIO(dados), 
+                filename = f"{msg}.txt")
+            )
 
     if "geral" in args:
-        await enviar_mensagem("Rank Geral", backend.resgatar_rank_geral())
+        query = backend.resgatar_rank_geral()
+        dados = formatar_mensagem(query)
+        msg = f"Rank Geral {query.data_hora}"
+        await enviar_mensagem(dados, msg)
     elif "mensal" in args:
-        await enviar_mensagem("Rank Geral", backend.resgatar_rank_mensal())
+        query = backend.resgatar_rank_mensal()
+        dados = formatar_mensagem(query)
+        msg = f"Rank Mensal {query[0].data_hora.data_passado} {query[0].data_hora.data_atual}"
+        await enviar_mensagem(dados, msg)
     elif "dxp" in args:
-        dados = backend.resgatar_rank_dxp()
-        if dados:
-            await enviar_mensagem("Rank Geral", dados)
+        query = backend.resgatar_rank_dxp()
+        if query:
+            dados = formatar_mensagem(query)
+            msg = f"Rank DXP {query[0].data_hora.data_inicio} {query[0].data_hora.data_fim}"
+            await enviar_mensagem(dados, msg)
         else:
             await ctx.message.channel.send(
                 f"Não há histórico de DXP para exibir, {ctx.message.author.mention}. Para ver informações sobre futuros Double EXP, use `@Ranks PT-BR dxp`."
