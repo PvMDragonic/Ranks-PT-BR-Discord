@@ -1,4 +1,4 @@
-from datetime import datetime, date, timedelta
+from datetime import datetime, timedelta, date, time
 import psycopg2
 
 class Conexao(object):    
@@ -193,9 +193,9 @@ def dxp_acontecendo() -> bool:
     try:
         db = Conexao()
         datas_dxp = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")[0]
-        inicio = datas_dxp[1]
-        fim = datas_dxp[2]
-        return fim > datetime.now().date() > inicio
+        inicio = datetime.combine(datas_dxp[1], time(9))
+        fim = datetime.combine(datas_dxp[2],  time(9))
+        return fim > datetime.now() > inicio
     finally:
         db.fechar()
 
