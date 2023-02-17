@@ -23,16 +23,16 @@ def loop_diario():
 
     while True:
         time.sleep(300)
-
-        # Calibra automaticamente pra sempre rodar logo após as 9 da manhã.
-        if NOVE <= datetime.datetime.now().time() <= NOVE_MEIA:
+        
+        # Refresh de hora em hora durante DXP.
+        if backend.dxp_acontecendo():
+            time.sleep(3300)
             exp_scrapper.buscar_clans()
 
-            # Refresh de hora em hora durante DXP.
-            if backend.dxp_acontecendo():
-                time.sleep(3300)
-            else:
-                time.sleep(84000)
+        # Calibra automaticamente pra sempre rodar logo após as 9 da manhã.
+        elif NOVE <= datetime.datetime.now().time() <= NOVE_MEIA:
+            exp_scrapper.buscar_clans()
+            time.sleep(84000)
 
 def loop_mensal():
     while True:
