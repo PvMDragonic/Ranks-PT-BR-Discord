@@ -140,16 +140,13 @@ def resgatar_rank_dxp():
         # Data de início já passou.
         else:
             fim = double_atual[2]
-
-            # Double começou mas não terminou ainda.
-            if fim > hoje:
-                fim = hoje
             
         xp_inicio = [
             Estatisticas(*clan) for clan in db.consultar(
                 f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
                 FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                WHERE data_hora BETWEEN '{inicio} 09:00:00' AND '{inicio} 09:59:00'"
+                WHERE data_hora BETWEEN '{inicio}' AND '{fim}' \
+                ORDER BY nome, data_hora"
             )
         ]
 
@@ -157,14 +154,15 @@ def resgatar_rank_dxp():
             Estatisticas(*clan) for clan in db.consultar(
                 f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
                 FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                WHERE data_hora BETWEEN '{fim} 09:00:00' AND '{fim} 09:59:00'"
+                WHERE data_hora BETWEEN '{inicio}' AND '{fim}' \
+                ORDER BY nome, data_hora DESC"
             )
         ]
 
         return [
             Estatisticas(
                 f.clan_id,
-                Datas(f.data_hora.date(), i.data_hora.date()),
+                Datas(f.data_hora.strftime('%Y-%m-%d %H:%M'), i.data_hora.strftime('%Y-%m-%d %H:%M')),
                 f.membros - i.membros,
                 f.nv_fort - i.nv_fort,
                 f.nv_total - i.nv_total,
