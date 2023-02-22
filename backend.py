@@ -199,6 +199,24 @@ def dxp_acontecendo() -> bool:
     finally:
         db.fechar()
 
+def dxp_restante() -> str:
+    try:
+        db = Conexao()
+        datas_dxp = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")[0]
+        fim = datetime.combine(datas_dxp[2],  time(9))
+        restante = fim - datetime.now()
+
+        if restante.days > 1:
+            return f"{restante.days} dias e {restante.seconds // 3600} horas restantes!"
+        elif restante.seconds > 3600:
+            return f"{restante.seconds // 3600} horas restantes!"
+        elif 300 < restante.seconds < 3600:   
+            return f"{restante.seconds // 60} minutos restantes!"     
+        else:
+            return f"{restante.seconds // 60} encerramento eminente!" 
+    finally:
+        db.fechar()
+
 def adicionar_dxp(data_comeco: date, data_fim: date) -> None:
     db = Conexao()
     db.manipular(

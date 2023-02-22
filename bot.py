@@ -55,7 +55,7 @@ async def dxp(ctx, *args):
         )[0:10]
 
         embed = discord.Embed(
-            title = f"EXP EM DOBRO ACONTECENDO!!", 
+            title = f"EXP EM DOBRO ATIVO — {backend.dxp_restante()}", 
             description = f"__Top 10 clãs:__", 
             color = 0x7a8ff5)
         for index, clan in enumerate(ranks):
