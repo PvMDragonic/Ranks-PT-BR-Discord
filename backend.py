@@ -242,4 +242,4 @@ def adicionar_clans(lista: list) -> None:
 
 def adicionar_log(texto: str) -> None:
     with open('log.txt', 'a') as arqv:
-        arqv.writelines(texto)
+        arqv.writelines(f'{texto}\n')
