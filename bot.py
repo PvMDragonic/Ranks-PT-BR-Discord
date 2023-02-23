@@ -200,14 +200,36 @@ async def on_command_error(ctx, error):
 async def on_message(message):
     try:
         if message.content == "<@1071957068262674582>":
-            return await message.channel.send(
-                f"Segue abaixo a lista de comandos:\
-                    \n> `@Ranks PT-BR dxp` — Informações sobre o Double XP;\
-                    \n> `@Ranks PT-BR rank geral` — Lista com o rank de todos os clãs pt-br;\
-                    \n> `@Ranks PT-BR rank mensal` — Lista com o rank do último mês de todos os clãs pt-br ativos;\
-                    \n> `@Ranks PT-BR rank dxp` — Lista com o rank de Doubles passados dos clãs pt-br ativos."
+            embed = discord.Embed(
+                title = f"LISTA DE COMANDOS",  
+                color = 0x7a8ff5
+            )
+
+            embed.add_field(
+                name = f'@Ranks PT-BR dxp', 
+                value = f'Informações sobre o Double XP.', 
+                inline = False
+            )
+
+            embed.add_field(
+                name = f'@Ranks PT-BR rank geral', 
+                value = f'Lista com o rank de todos os clãs pt-br.', 
+                inline = False
+            )
+
+            embed.add_field(
+                name = f'@Ranks PT-BR rank mensal', 
+                value = f'Lista com o rank do último mês de todos os clãs pt-br ativos.', 
+                inline = False
+            )
+
+            embed.add_field(
+                name = f'@Ranks PT-BR rank dxp', 
+                value = f'Lista com o rank de Doubles passados dos clãs pt-br ativos.', 
+                inline = False
             )
         
+            return await message.channel.send(message.author.mention, embed = embed)
         await bot.process_commands(message)
     except discord.errors.Forbidden as e:
         msg = f"[{datetime.datetime.now()}] Erro de permissão em {message.guild.name}: {e}"
