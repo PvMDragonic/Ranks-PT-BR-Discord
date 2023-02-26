@@ -206,7 +206,7 @@ def dxp_restante() -> str:
         fim = datetime.combine(datas_dxp[2],  time(9))
         restante = fim - datetime.now()
 
-        if restante.days > 1:
+        if restante.days >= 1:
             return f"{restante.days} dias e {restante.seconds // 3600} horas restantes!"
         elif restante.seconds > 3600:
             return f"{restante.seconds // 3600} horas restantes!"
