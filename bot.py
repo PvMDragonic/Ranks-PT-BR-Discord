@@ -117,7 +117,7 @@ async def rank(ctx, *args):
     if "geral" in args:
         query = backend.resgatar_rank_geral()
         dados = formatar_mensagem(query)
-        msg = f"Rank Geral {query.data_hora}"
+        msg = f"Rank Geral {query[0].data_hora.date()}"
         await enviar_mensagem(dados, msg)
     elif "mensal" in args:
         query = backend.resgatar_rank_mensal()
