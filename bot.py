@@ -41,6 +41,38 @@ def loop_mensal():
         if datetime.date.today().day == 1:
             nomes_scrapper.buscar_clans()
 
+def lista_comandos():
+    embed = discord.Embed(
+        title = f"LISTA DE COMANDOS",  
+        color = 0x7a8ff5
+    )
+
+    embed.add_field(
+        name = f'@Ranks PT-BR dxp', 
+        value = f'Informações sobre o Double XP.', 
+        inline = False
+    )
+
+    embed.add_field(
+        name = f'@Ranks PT-BR rank geral', 
+        value = f'Lista com o rank de todos os clãs pt-br.', 
+        inline = False
+    )
+
+    embed.add_field(
+        name = f'@Ranks PT-BR rank mensal', 
+        value = f'Lista com o rank do último mês de todos os clãs pt-br ativos.', 
+        inline = False
+    )
+
+    embed.add_field(
+        name = f'@Ranks PT-BR rank dxp', 
+        value = f'Lista com o rank de Doubles passados dos clãs pt-br ativos.', 
+        inline = False
+    )
+
+    return embed
+
 @bot.command()
 async def dxp(ctx, *args):
     inicio_dxp = backend.resgatar_data_dxp()[1]
@@ -199,37 +231,18 @@ async def on_command_error(ctx, error):
 @bot.event
 async def on_message(message):
     try:
+        if not bot.user.mentioned_in(message):
+            return
+
+        await message.channel.typing()
+
+        # Se alguém só marcou o bot, sem pedir algum comando.
         if message.content == "<@1071957068262674582>":
-            embed = discord.Embed(
-                title = f"LISTA DE COMANDOS",  
-                color = 0x7a8ff5
-            )
-
-            embed.add_field(
-                name = f'@Ranks PT-BR dxp', 
-                value = f'Informações sobre o Double XP.', 
-                inline = False
-            )
-
-            embed.add_field(
-                name = f'@Ranks PT-BR rank geral', 
-                value = f'Lista com o rank de todos os clãs pt-br.', 
-                inline = False
-            )
-
-            embed.add_field(
-                name = f'@Ranks PT-BR rank mensal', 
-                value = f'Lista com o rank do último mês de todos os clãs pt-br ativos.', 
-                inline = False
-            )
-
-            embed.add_field(
-                name = f'@Ranks PT-BR rank dxp', 
-                value = f'Lista com o rank de Doubles passados dos clãs pt-br ativos.', 
-                inline = False
+            return await message.channel.send(
+                message.author.mention, 
+                embed = lista_comandos()
             )
         
-            return await message.channel.send(message.author.mention, embed = embed)
         await bot.process_commands(message)
     except discord.errors.Forbidden as e:
         msg = f"[{datetime.datetime.now()}] Erro de permissão em {message.guild.name}: {e}"
