@@ -141,36 +141,39 @@ async def rank(ctx, *args):
 
     async def enviar_mensagem(dados, mensagem):
         await ctx.channel.send(
-                content = f"{msg} {ctx.message.author.mention}", 
-                file = discord.File(fp = io.StringIO(dados), 
-                filename = f"{msg}.txt")
-            )
+            content = f"{msg} {ctx.message.author.mention}", 
+            file = discord.File(fp = io.StringIO(dados), 
+            filename = f"{msg}.txt")
+        )
 
     if "geral" in args:
         query = backend.resgatar_rank_geral()
         dados = formatar_mensagem(query)
         msg = f"Rank Geral {query[0].data_hora.date()}"
-        await enviar_mensagem(dados, msg)
-    elif "mensal" in args:
+        return await enviar_mensagem(dados, msg)
+    
+    if "mensal" in args:
         query = backend.resgatar_rank_mensal()
         dados = formatar_mensagem(query)
         msg = f"Rank Mensal {query[0].data_hora.data_passado} {query[0].data_hora.data_atual}"
-        await enviar_mensagem(dados, msg)
-    elif "dxp" in args:
+        return await enviar_mensagem(dados, msg)
+    
+    if "dxp" in args:
         query = backend.resgatar_rank_dxp()
+
         if query:
             dados = formatar_mensagem(query)
             msg = f"Rank DXP {query[0].data_hora.data_inicio} {query[0].data_hora.data_fim}"
-            await enviar_mensagem(dados, msg)
-        else:
-            await ctx.message.channel.send(
-                f"Não há histórico de DXP para exibir, {ctx.message.author.mention}. Para ver informações sobre futuros Double EXP, use `@Ranks PT-BR dxp`."
-            )
-    else:
-        await ctx.message.channel.send(
-            f"Você precisa especificar o tipo de rank, {ctx.message.author.mention}! \
-                Use:\n> `rank geral`;\n> `rank mensal`;\n> `rank dxp`"
+            return await enviar_mensagem(dados, msg)
+
+        return await ctx.message.channel.send(
+            f"Não há histórico de DXP para exibir, {ctx.message.author.mention}. Para ver informações sobre futuros Double EXP, use `@Ranks PT-BR dxp`."
         )
+    
+    await ctx.message.channel.send(
+        f"Você precisa especificar o tipo de rank, {ctx.message.author.mention}!",
+        embed = lista_comandos()
+    )
 
 @bot.command()
 async def criar(ctx, *args):
