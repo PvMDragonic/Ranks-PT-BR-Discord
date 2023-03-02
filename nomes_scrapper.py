@@ -19,7 +19,7 @@ def validar_ptbr(nomes):
     MODEL = fasttext.load_model('lid.176.ftz')
     ptbr = []
 
-    def filtrar():
+    def filtrar(nome):
         pagina_clan = f'https://secure.runescape.com/m=clan-home/l=3/a=869/clan/{nome}'
         conteudo = html.fromstring(requests.get(pagina_clan).content)
         sobre = " ".join(conteudo.xpath('.//p[@id="aboutOurClan"]/text()'))
