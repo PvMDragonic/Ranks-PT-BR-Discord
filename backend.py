@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, date, time
+from datetime import datetime, timedelta
 import psycopg2
 
 class Conexao(object):    
@@ -122,10 +122,9 @@ def resgatar_rank_dxp():
         query = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")
         double_atual = query[0]
         inicio = double_atual[1]
-        hoje = datetime.now().date()
 
         # Double ainda não passou.
-        if inicio > hoje:
+        if inicio > datetime.now():
 
             # Se o primeiro DXP do banco de dados ainda está pra vir.
             if len(query) == 1:
@@ -173,14 +172,15 @@ def resgatar_rank_dxp():
     finally:
         db.fechar()
 
-def resgatar_data_dxp() -> date:
+def resgatar_data_dxp() -> datetime:
     try:
         db = Conexao()
-        return db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")[0]
+        datahora = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")[0]
+        return datahora
     finally:
         db.fechar()
 
-def verificar_dxp(data_comeco: date, data_fim: date) -> bool:
+def verificar_dxp(data_comeco: datetime, data_fim: datetime) -> bool:
     try:
         db = Conexao()
         return db.consultar(
@@ -193,8 +193,8 @@ def dxp_acontecendo() -> bool:
     try:
         db = Conexao()
         datas_dxp = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")[0]
-        inicio = datetime.combine(datas_dxp[1], time(9))
-        fim = datetime.combine(datas_dxp[2],  time(9))
+        inicio = datas_dxp[1]
+        fim = datas_dxp[2]
         return fim > datetime.now() > inicio
     finally:
         db.fechar()
@@ -203,7 +203,7 @@ def dxp_restante() -> str:
     try:
         db = Conexao()
         datas_dxp = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")[0]
-        fim = datetime.combine(datas_dxp[2],  time(9))
+        fim = datas_dxp[2]
         restante = fim - datetime.now()
 
         if restante.days >= 1:
@@ -217,7 +217,7 @@ def dxp_restante() -> str:
     finally:
         db.fechar()
 
-def adicionar_dxp(data_comeco: date, data_fim: date) -> None:
+def adicionar_dxp(data_comeco: datetime, data_fim: datetime) -> None:
     db = Conexao()
     db.manipular(
         f"INSERT INTO dxp (data_comeco, data_fim) VALUES ('{data_comeco}', '{data_fim}')"

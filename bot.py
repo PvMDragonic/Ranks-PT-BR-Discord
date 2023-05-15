@@ -100,7 +100,7 @@ async def dxp(ctx, *args):
     
         await ctx.message.channel.send(embed = embed)
     else:
-        hoje = datetime.datetime.now().date()
+        hoje = datetime.datetime.now()
 
         # Double ainda não passou.
         if inicio_dxp > hoje:
@@ -189,16 +189,20 @@ async def criar(ctx, *args):
         )
     
     try:
-        data_comeco = datetime.date(
+        data_comeco = datetime.datetime(
             int(comeco_ano), 
             int(comeco_mes), 
-            int(comeco_dia)
+            int(comeco_dia),
+            9, 0, 0
         )
-        data_fim = datetime.date(
+
+        data_fim = datetime.datetime(
             int(fim_ano), 
             int(fim_mes), 
-            int(fim_dia)
+            int(fim_dia),
+            9, 0, 0
         )
+
     except ValueError:
         return await ctx.message.channel.send(
             f"Você não inseriu uma data correta {ctx.message.author.mention}!"
@@ -206,15 +210,15 @@ async def criar(ctx, *args):
 
     if backend.verificar_dxp(data_comeco, data_fim):
         return await ctx.message.channel.send(
-            f"Já há um DXP registrado cujas datas coincidem com o período entre `{data_comeco}` e `{data_fim}`, {ctx.message.author.mention}!"
+            f"Já há um DXP registrado cujas datas coincidem com o período entre `{data_comeco.date()}` e `{data_fim.date()}`, {ctx.message.author.mention}!"
         )
 
     backend.adicionar_dxp(data_comeco, data_fim)
     await ctx.message.channel.send(
-        f"Double XP para as datas entre `{data_comeco}` e `{data_fim}` registrado com sucesso {ctx.message.author.mention}!"
+        f"Double XP para as datas entre `{data_comeco.date()}` e `{data_fim.date()}` registrado com sucesso {ctx.message.author.mention}!"
     )
 
-    msg = f"[{datetime.now()}] DXP registrado de {data_comeco} até {data_fim} por {ctx.message.author}."
+    msg = f"[{datetime.datetime.now()}] DXP registrado de {data_comeco} até {data_fim} por {ctx.message.author}."
     backend.adicionar_log(msg)
     print(msg)
 
