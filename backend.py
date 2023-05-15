@@ -98,7 +98,7 @@ def resgatar_rank_mensal():
         return [
             Estatisticas(
                 a.clan_id,
-                Datas(a.data_hora.date(), p.data_hora.date()),
+                Datas(a.data_hora.strftime('%d/%m/%Y'), p.data_hora.strftime('%d/%m/%Y')),
                 a.membros - p.membros,
                 a.nv_fort - p.nv_fort,
                 a.nv_total - p.nv_total,
@@ -161,7 +161,7 @@ def resgatar_rank_dxp():
         return [
             Estatisticas(
                 f.clan_id,
-                Datas(f.data_hora.strftime('%Y-%m-%d %H:%M'), i.data_hora.strftime('%Y-%m-%d %H:%M')),
+                Datas(f.data_hora.strftime('%d/%m/%Y %H:%M'), i.data_hora.strftime('%d/%m/%Y %H:%M')),
                 f.membros - i.membros,
                 f.nv_fort - i.nv_fort,
                 f.nv_total - i.nv_total,

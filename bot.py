@@ -105,8 +105,8 @@ async def dxp(ctx, *args):
         # Double ainda não passou.
         if inicio_dxp > hoje:
             embed = discord.Embed(
-                title = f"Nenhum EXP em Dobro ativo no momento.", 
-                description = f"O próximo DXP será em __{inicio_dxp}__ às __09:00:00 BSB__.", 
+                title = f"O próximo EXP em Dobro se aproxima!", 
+                description = f"O DXP começa em __{inicio_dxp.strftime('%d/%m/%Y')}__ às __09:00__, horário de Brasília (12:00 do jogo).", 
                 color = 0x7a8ff5)
             embed.add_field(name = "", value = "Para o rank completo do último DXP, use **@Ranks PT-BR rank dxp**.", inline = False)
 
@@ -155,7 +155,7 @@ async def rank(ctx, *args):
     if "mensal" in args:
         query = backend.resgatar_rank_mensal()
         dados = formatar_mensagem(query)
-        msg = f"Rank Mensal {query[0].data_hora.data_passado} {query[0].data_hora.data_atual}"
+        msg = f"Rank Mensal de `{query[0].data_hora.data_passado}` até `{query[0].data_hora.data_atual}`"
         return await enviar_mensagem(dados, msg)
     
     if "dxp" in args:
@@ -163,7 +163,7 @@ async def rank(ctx, *args):
 
         if query:
             dados = formatar_mensagem(query)
-            msg = f"Rank DXP {query[0].data_hora.data_inicio} {query[0].data_hora.data_fim}"
+            msg = f"Rank DXP de `{query[0].data_hora.data_inicio}` até `{query[0].data_hora.data_fim}`"
             return await enviar_mensagem(dados, msg)
 
         return await ctx.message.channel.send(
@@ -185,7 +185,7 @@ async def criar(ctx, *args):
         _, comeco_ano, comeco_mes, comeco_dia, fim_ano, fim_mes, fim_dia = args
     except ValueError:
         return await ctx.message.channel.send(
-            f"Você não especificou todos os valores necessários para estabelecer a(s) data(s)! Use o formato `YYYY-MM-DD` {ctx.message.author.mention}."
+            f"Use o formato `@Ranks PT-BR criar dxp YYYY MM DD YYYY MM DD` para registrar um novo DXP! {ctx.message.author.mention}"
         )
     
     try:
@@ -210,7 +210,7 @@ async def criar(ctx, *args):
 
     if backend.verificar_dxp(data_comeco, data_fim):
         return await ctx.message.channel.send(
-            f"Já há um DXP registrado cujas datas coincidem com o período entre `{data_comeco.date()}` e `{data_fim.date()}`, {ctx.message.author.mention}!"
+            f"Já há um DXP registrado para as datas entre `{data_comeco.date()}` e `{data_fim.date()}`, {ctx.message.author.mention}!"
         )
 
     backend.adicionar_dxp(data_comeco, data_fim)
