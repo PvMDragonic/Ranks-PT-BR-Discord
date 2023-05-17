@@ -46,9 +46,19 @@ def resgatar_clans() -> list[Clan]:
     finally:
         db.fechar()
 
-def resgatar_rank_geral() -> list[Estatisticas]:
+def resgatar_rank_geral(data: date) -> list[Estatisticas]:
     try:
         db = Conexao()
+        
+        if data:
+            return [
+                Estatisticas(*clan) for clan in db.consultar(
+                    f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
+                    FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
+                    WHERE data_hora BETWEEN '{data} 00:01:00' AND '{data} 23:59:00'"
+                )
+            ]
+
         return [
             Estatisticas(*clan) for clan in db.consultar(
                 "SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \

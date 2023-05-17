@@ -147,9 +147,36 @@ async def rank(ctx, *args):
         )
 
     if "geral" in args:
-        query = backend.resgatar_rank_geral()
+        def selecionar_data() -> list:
+            if 4 > len(args) > 1:
+                return f"Use o formato `@Ranks PT-BR rank geral YYYY MM DD`. {ctx.message.author.mention}"
+            
+            if len(args) == 4:
+                # Precisa converter os args pra int, porque eles vem em str.
+                try:
+                    return datetime.date(
+                        year = int(args[1]), 
+                        month = int(args[2]), 
+                        day = int(args[3])
+                    )
+                except ValueError:
+                    return f"Use o formato `YYYY MM DD` para representar a data. {ctx.message.author.mention}"
+
+            # Não tinha data; assume mais recente.
+            return None
+
+        data = selecionar_data()
+        if type(data) == str:
+            return await ctx.message.channel.send(data)
+        
+        query = backend.resgatar_rank_geral(data)
+        if not query:
+            return await ctx.message.channel.send(
+                f"Não há registros do dia `{data.strftime('%d/%m/%Y')}`. {ctx.message.author.mention}"
+            )
+        
         dados = formatar_mensagem(query)
-        msg = f"Rank Geral {query[0].data_hora.date()}"
+        msg = f"Rank Geral `{query[0].data_hora.strftime('%d/%m/%Y')}`"
         return await enviar_mensagem(dados, msg)
     
     if "mensal" in args:
