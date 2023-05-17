@@ -153,7 +153,54 @@ async def rank(ctx, *args):
         return await enviar_mensagem(dados, msg)
     
     if "mensal" in args:
-        query = backend.resgatar_rank_mensal()
+        def selecionar_datas() -> list:
+            if 7 > len(args) > 1:
+                return f"Use o formato `@Ranks PT-BR rank mensal YYYY MM DD YYYY MM DD`. {ctx.message.author.mention}"
+            
+            if len(args) == 7:
+                # Precisa converter os args pra int, porque eles vem em str.
+                try:
+                    inicio = datetime.date(
+                        year = int(args[1]), 
+                        month = int(args[2]), 
+                        day = int(args[3])
+                    )
+                    fim = datetime.date(
+                        year = int(args[4]), 
+                        month = int(args[5]), 
+                        day = int(args[6])
+                    )
+                except ValueError:
+                    return f"Use o formato `YYYY MM DD` para representar as datas. {ctx.message.author.mention}"
+                
+                return [inicio, fim]
+
+            # Não tinha data; assume mais recente.
+            return [None, None]
+
+        datas = selecionar_datas()
+        if type(datas) == str:
+            return await ctx.message.channel.send(datas)
+
+        query = backend.resgatar_rank_mensal(datas[0], datas[1])
+
+        if query == -1:
+            return await ctx.message.channel.send(
+                f"A data `{datas[0].strftime('%d/%m/%Y')}` ainda não chegou! {ctx.message.author.mention}"
+            )
+        elif query == -2:
+            return await ctx.message.channel.send(
+                f"A data `{datas[1].strftime('%d/%m/%Y')}` ainda não chegou! {ctx.message.author.mention}"
+            )
+        elif query == -3:
+            return await ctx.message.channel.send(
+                f"Não há dados registrados para o período terminando em `{datas[1].strftime('%d/%m/%Y')}`! {ctx.message.author.mention}"
+            )
+        elif query == -4:
+            return await ctx.message.channel.send(
+                f"Não há dados registrados para o período começando em `{datas[0].strftime('%d/%m/%Y')}`! {ctx.message.author.mention}"
+            )
+
         dados = formatar_mensagem(query)
         msg = f"Rank Mensal de `{query[0].data_hora.data_passado}` até `{query[0].data_hora.data_atual}`"
         return await enviar_mensagem(dados, msg)

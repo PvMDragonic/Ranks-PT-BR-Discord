@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import psycopg2
 
 class Conexao(object):    
@@ -59,7 +59,7 @@ def resgatar_rank_geral() -> list[Estatisticas]:
     finally:
         db.fechar()
 
-def resgatar_rank_mensal():
+def resgatar_rank_mensal(data_inicio: date, data_fim: date):
     class Datas():
         def __init__(self, *args) -> None:
             self.data_atual, self.data_passado = args
@@ -67,33 +67,63 @@ def resgatar_rank_mensal():
     try:
         db = Conexao()
         
-        atual = [
-            Estatisticas(*clan) for clan in db.consultar(
-                "SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
-                FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                ORDER BY nome, data_hora DESC"
-            ) 
-        ]
-
-        mes_passado = atual[0].data_hora.date() - timedelta(days = 30)
-
-        passado = [
-            Estatisticas(*clan) for clan in db.consultar(
-                f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
-                FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                WHERE data_hora BETWEEN '{mes_passado} 00:01:00' AND '{mes_passado} 23:59:00'"
-            )
-        ]
-
-        if not passado:
-            # Pega a data mais antiga disponível.
-            passado = [
+        # Não especificou mês; assume data mais recente.
+        if data_inicio == None:
+            fim = [
                 Estatisticas(*clan) for clan in db.consultar(
                     "SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
                     FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                    ORDER BY nome, data_hora"
+                    ORDER BY nome, data_hora DESC"
+                ) 
+            ]
+
+            mes_passado = fim[0].data_hora.date() - timedelta(days = 30)
+
+            inicio = [
+                Estatisticas(*clan) for clan in db.consultar(
+                    f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
+                    FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
+                    WHERE data_hora BETWEEN '{mes_passado} 00:01:00' AND '{mes_passado} 23:59:00'"
                 )
             ]
+
+            # Pega a data mais antiga disponível.
+            if not inicio:
+                inicio = [
+                    Estatisticas(*clan) for clan in db.consultar(
+                        "SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
+                        FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
+                        ORDER BY nome, data_hora"
+                    )
+                ]
+        else:
+            if data_inicio > datetime.now().date():
+                return -1
+            
+            if data_fim > datetime.now().date():
+                return -2
+            
+            fim = [
+                Estatisticas(*clan) for clan in db.consultar(
+                    f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
+                    FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
+                    WHERE data_hora BETWEEN '{data_fim} 00:01:00' AND '{data_fim} 23:59:00'"
+                ) 
+            ]
+
+            if not fim:
+                return -3
+
+            inicio = [
+                Estatisticas(*clan) for clan in db.consultar(
+                    f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
+                    FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
+                    WHERE data_hora BETWEEN '{data_inicio} 00:01:00' AND '{data_inicio} 23:59:00'"
+                )
+            ]
+
+            if not inicio:
+                return -4
 
         return [
             Estatisticas(
@@ -104,7 +134,7 @@ def resgatar_rank_mensal():
                 a.nv_total - p.nv_total,
                 a.nv_cb_total - p.nv_cb_total,
                 a.exp_total - p.exp_total
-            ) for a, p in zip(atual, passado) 
+            ) for a, p in zip(fim, inicio) 
             if a.exp_total - p.exp_total != 0
         ]
 
