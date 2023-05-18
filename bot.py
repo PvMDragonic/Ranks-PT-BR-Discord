@@ -233,19 +233,36 @@ async def rank(ctx, *args):
         return await enviar_mensagem(dados, msg)
     
     if "dxp" in args:
-        query = backend.resgatar_rank_dxp()
+        def selecionar_quantia() -> int:
+            if len(args) != 2:
+                return 0
+            
+            try:
+                return int(args[1])
+            except ValueError:
+                return f"Especifique um número inteiro que condiga com quantos Doubles atrás foi o DXP desejado! {ctx.message.author.mention}"
 
-        if query:
-            dados = formatar_mensagem(query)
-            msg = f"Rank DXP de `{query[0].data_hora.data_inicio}` até `{query[0].data_hora.data_fim}`"
-            return await enviar_mensagem(dados, msg)
+        quantos_atras = selecionar_quantia()
+        if type(quantos_atras) == str:
+            return await ctx.message.channel.send(quantos_atras)
 
-        return await ctx.message.channel.send(
-            f"Não há histórico de DXP para exibir, {ctx.message.author.mention}. Para ver informações sobre futuros Double EXP, use `@Ranks PT-BR dxp`."
-        )
+        query = backend.resgatar_rank_dxp(quantos_atras)
+
+        if query == -1:
+            return await ctx.message.channel.send(
+                f"Não há histórico de um DXP tão antigo assim para exibir; tente um número menor. {ctx.message.author.mention}"
+            )
+        elif query == -2:
+            return await ctx.message.channel.send(
+                f"Não há histórico de DXP para exibir; use `@Ranks PT-BR dxp` para ver informações sobre futuros Doubles. {ctx.message.author.mention}"
+            )
+        
+        dados = formatar_mensagem(query)
+        msg = f"Rank DXP de `{query[0].data_hora.data_inicio}` até `{query[0].data_hora.data_fim}`"
+        return await enviar_mensagem(dados, msg)
     
     await ctx.message.channel.send(
-        f"Você precisa especificar o tipo de rank, {ctx.message.author.mention}!",
+        f"Você precisa especificar o tipo de rank! {ctx.message.author.mention}",
         embed = lista_comandos()
     )
 

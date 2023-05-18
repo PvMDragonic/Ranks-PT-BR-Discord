@@ -49,7 +49,7 @@ def resgatar_clans() -> list[Clan]:
 def resgatar_rank_geral(data: date) -> list[Estatisticas]:
     try:
         db = Conexao()
-        
+
         if data:
             return [
                 Estatisticas(*clan) for clan in db.consultar(
@@ -151,7 +151,7 @@ def resgatar_rank_mensal(data_inicio: date, data_fim: date):
     finally:
         db.fechar()
 
-def resgatar_rank_dxp():
+def resgatar_rank_dxp(quantos_atras: int) -> list:
     class Datas():
         def __init__(self, *args) -> None:
             self.data_fim, self.data_inicio = args
@@ -160,21 +160,25 @@ def resgatar_rank_dxp():
         db = Conexao()
 
         query = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")
-        double_atual = query[0]
+
+        # Selecionou um DXP antigo demais que não tá na base de dados.
+        if quantos_atras > (len(query) - 1):
+            return -1
+
+        double_atual = query[quantos_atras]
         inicio = double_atual[1]
 
         # Double ainda não passou.
         if inicio > datetime.now():
 
-            # Se o primeiro DXP do banco de dados ainda está pra vir.
+            # Se o único DXP do banco de dados ainda está pra vir.
             if len(query) == 1:
-                return None
+                return -2
 
             # Se há mais de um DXP registrados no banco de dados.
-            else:
-                ultimo_double = query[1]
-                inicio = ultimo_double[1]
-                fim = ultimo_double[2]
+            ultimo_double = query[quantos_atras + 1]
+            inicio = ultimo_double[1]
+            fim = ultimo_double[2]
 
         # Data de início já passou.
         else:
