@@ -49,25 +49,31 @@ def lista_comandos():
 
     embed.add_field(
         name = f'@Ranks PT-BR dxp', 
-        value = f'Informações sobre o Double XP.', 
+        value = f'Mostra informações sobre o DXP.', 
         inline = False
     )
 
+    embed.add_field(name = "", value = "᲼᲼")
+
     embed.add_field(
-        name = f'@Ranks PT-BR rank geral', 
-        value = f'Lista com o rank de todos os clãs pt-br.', 
+        name = f'@Ranks PT-BR rank geral [data]', 
+        value = f'Lista o rank geral dos clãs pt-br.\n\nParâmetros opcionais:\n   [data] (YYYY MM DD) — Seleciona DXP anterior.\n*"@Ranks PT-BR rank geral 2023 04 10"*', 
         inline = False
     )
 
+    embed.add_field(name = "", value = "᲼᲼")
+
     embed.add_field(
-        name = f'@Ranks PT-BR rank mensal', 
-        value = f'Lista com o rank do último mês de todos os clãs pt-br ativos.', 
+        name = f'@Ranks PT-BR rank mensal [datas]', 
+        value = f'Lista o rank do último mês dos clãs pt-br ativos.\n\nParâmetros opcionais:\n   [datas] (YYYY MM DD YYYY MM DD) — Seleciona período específico.\n*"@Ranks PT-BR rank mensal 2023 04 10 2023 05 10"*', 
         inline = False
     )
 
+    embed.add_field(name = "", value = "᲼᲼")
+
     embed.add_field(
-        name = f'@Ranks PT-BR rank dxp', 
-        value = f'Lista com o rank de Doubles passados dos clãs pt-br ativos.', 
+        name = f'@Ranks PT-BR rank dxp [número]', 
+        value = f'Lista o rank de Doubles passados dos clãs pt-br ativos.\n\nParâmetros opcionais:\n   [número] (n) — Seleciona DXP passado condigente ao número.\n*"@Ranks PT-BR rank dxp 1"*', 
         inline = False
     )
 
@@ -78,7 +84,7 @@ async def dxp(ctx, *args):
     inicio_dxp = backend.resgatar_data_dxp()[1]
 
     if backend.dxp_acontecendo():
-        ranks = backend.resgatar_rank_dxp()
+        ranks = backend.resgatar_rank_dxp(0)
 
         ranks = sorted(
             ranks, 
