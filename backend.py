@@ -193,6 +193,10 @@ def resgatar_rank_dxp(quantos_atras: int) -> list:
             )
         ]
 
+        # DXP começou mas ainda não houve a primeira coleta de XP.
+        if not xp_inicio:
+            return -3
+
         xp_fim = [
             Estatisticas(*clan) for clan in db.consultar(
                 f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
@@ -202,16 +206,23 @@ def resgatar_rank_dxp(quantos_atras: int) -> list:
             )
         ]
 
+        # Só houve uma coleta de XP desde o início do Double.
+        if xp_inicio == xp_fim:
+            return -3
+
         return [
             Estatisticas(
-                f.clan_id,
-                Datas(f.data_hora.strftime('%d/%m/%Y %H:%M'), i.data_hora.strftime('%d/%m/%Y %H:%M')),
-                f.membros - i.membros,
-                f.nv_fort - i.nv_fort,
-                f.nv_total - i.nv_total,
-                f.nv_cb_total - i.nv_cb_total,
-                f.exp_total - i.exp_total
-            ) for f, i in zip(xp_fim, xp_inicio)
+                fim.clan_id,
+                Datas(
+                    fim.data_hora.strftime('%d/%m/%Y %H:%M'), 
+                    inicio.data_hora.strftime('%d/%m/%Y %H:%M')
+                ),
+                fim.membros - inicio.membros,
+                fim.nv_fort - inicio.nv_fort,
+                fim.nv_total - inicio.nv_total,
+                fim.nv_cb_total - inicio.nv_cb_total,
+                fim.exp_total - inicio.exp_total
+            ) for fim, inicio in zip(xp_fim, xp_inicio)
         ]
     finally:
         db.fechar()

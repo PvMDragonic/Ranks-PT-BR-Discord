@@ -86,6 +86,15 @@ async def dxp(ctx, *args):
     if backend.dxp_acontecendo():
         ranks = backend.resgatar_rank_dxp(0)
 
+        if ranks == -3:
+            embed = discord.Embed(
+                title = f"EXP EM DOBRO ATIVO — {backend.dxp_restante()}", 
+                description = f"__Não há dados suficientes para gerar um rank ainda.__", 
+                color = 0x7a8ff5)
+            embed.add_field(name = "\n", value = "Tente novamente dentro de 1 hora.", inline = False) 
+
+            return await ctx.message.channel.send(embed = embed)           
+        
         ranks = sorted(
             ranks, 
             reverse = True, 
@@ -95,7 +104,9 @@ async def dxp(ctx, *args):
         embed = discord.Embed(
             title = f"EXP EM DOBRO ATIVO — {backend.dxp_restante()}", 
             description = f"__Top 10 clãs:__", 
-            color = 0x7a8ff5)
+            color = 0x7a8ff5
+        )
+
         for index, clan in enumerate(ranks):
             embed.add_field(
                 name = f'*{index + 1}º — {clan.clan_id.replace("+", " ")}*', 
@@ -104,27 +115,25 @@ async def dxp(ctx, *args):
             )
         embed.add_field(name = "\n", value = "Para o rank completo, use **@Ranks PT-BR rank dxp**.", inline = False)
     
-        await ctx.message.channel.send(embed = embed)
-    else:
-        hoje = datetime.datetime.now()
+        return await ctx.message.channel.send(embed = embed)
 
-        # Double ainda não passou.
-        if inicio_dxp > hoje:
-            embed = discord.Embed(
-                title = f"O próximo EXP em Dobro se aproxima!", 
-                description = f"O DXP começa em __{inicio_dxp.strftime('%d/%m/%Y')}__ às __09:00__, horário de Brasília (12:00 do jogo).", 
-                color = 0x7a8ff5)
-            embed.add_field(name = "", value = "Para o rank completo do último DXP, use **@Ranks PT-BR rank dxp**.", inline = False)
+    # Double ainda não passou.
+    if inicio_dxp > datetime.datetime.now():
+        embed = discord.Embed(
+            title = f"O próximo EXP em Dobro se aproxima!", 
+            description = f"O DXP começa em __{inicio_dxp.strftime('%d/%m/%Y')}__ às __09:00__, horário de Brasília (12:00 do jogo).", 
+            color = 0x7a8ff5)
+        embed.add_field(name = "", value = "Para o rank completo do último DXP, use **@Ranks PT-BR rank dxp**.", inline = False)
 
-            await ctx.message.channel.send(embed = embed)
-        else:
-            embed = discord.Embed(
-                title = f"Nenhum EXP em Dobro ativo no momento.", 
-                description = f"O próximo DXP __ainda não foi anunciado__.", 
-                color = 0x7a8ff5)
-            embed.add_field(name = "", value = "Para o rank completo do último DXP, use **@Ranks PT-BR rank dxp**.", inline = False)
-            
-            await ctx.message.channel.send(embed = embed)
+        return await ctx.message.channel.send(embed = embed)
+    
+    embed = discord.Embed(
+        title = f"Nenhum EXP em Dobro ativo no momento.", 
+        description = f"O próximo DXP __ainda não foi anunciado__.", 
+        color = 0x7a8ff5)
+    embed.add_field(name = "", value = "Para o rank completo do último DXP, use **@Ranks PT-BR rank dxp**.", inline = False)
+    
+    await ctx.message.channel.send(embed = embed)
 
 @bot.command()
 async def rank(ctx, *args):
@@ -261,6 +270,10 @@ async def rank(ctx, *args):
         elif query == -2:
             return await ctx.message.channel.send(
                 f"Não há histórico de DXP para exibir; use `@Ranks PT-BR dxp` para ver informações sobre futuros Doubles. {ctx.message.author.mention}"
+            )
+        elif query == -3:
+            return await ctx.message.channel.send(
+                f"Não há dados suficientes para gerar um rank ainda; tente novamente dentro de 1 hora. {ctx.message.author.mention}"
             )
         
         dados = formatar_mensagem(query)
