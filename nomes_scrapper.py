@@ -19,30 +19,37 @@ def validar_ptbr(nomes):
     MODEL = fasttext.load_model('lid.176.ftz')
     ptbr = []
 
-    def filtrar(nome):
-        pagina_clan = f'https://secure.runescape.com/m=clan-home/l=3/a=869/clan/{nome}'
-        conteudo = html.fromstring(requests.get(pagina_clan).content)
-        sobre = " ".join(conteudo.xpath('.//p[@id="aboutOurClan"]/text()'))
-        lema = " ".join(conteudo.xpath('.//p[@id="ourMotto"]/text()'))[1:-2].replace("\n", " ")
-
-        # Verifica se é clã PT-BR
-        resultado = [
-            ('__label__pt') in MODEL.predict(sobre, k = 1)[0],
-            ('__label__pt') in MODEL.predict(lema, k = 1)[0]
-        ]
-
-        if any(resultado):
-            ptbr.append(nome)
-
     for nome in nomes:
-        try:
-            filtrar(nome)
-        except Exception:
+        tentativas = 3
+
+        while True:
             try:
-                time.sleep(10)
-                filtrar(nome)
-            except Exception as e:
-                print(f"Erro repetido na validação do clã {nome}: {e}")
+                pagina_clan = f'https://secure.runescape.com/m=clan-home/l=3/a=869/clan/{nome}'
+                requisicao = requests.get(pagina_clan).content
+                conteudo = html.fromstring(requisicao)
+
+                sobre = " ".join(conteudo.xpath('.//p[@id="aboutOurClan"]/text()'))
+                lema = " ".join(conteudo.xpath('.//p[@id="ourMotto"]/text()'))[1:-2].replace("\n", " ")
+
+                # Verifica se é clã PT-BR
+                resultado = [
+                    ('__label__pt') in MODEL.predict(sobre, k = 1)[0],
+                    ('__label__pt') in MODEL.predict(lema, k = 1)[0]
+                ]
+
+                if any(resultado):
+                    ptbr.append(nome)
+                    
+                break
+            except (requests.exceptions.RequestException, IndexError) as erro:
+                tentativas -= tentativas
+                if tentativas == 0:
+                    msg_log = f"[{datetime.now()}] Erro na coleta do clã {nome}: {erro}"
+                    backend.adicionar_log(msg_log)
+                    print(msg_log)
+                    break
+
+                time.sleep(60)
 
     backend.adicionar_clans(ptbr)
 
@@ -51,7 +58,9 @@ def encontrar_clans(lista):
 
     for num in lista:
         url = f'https://secure.runescape.com/m=clan-hiscores/l=3/a=869/ranking?ranking=xp_total&table=0&page={num}'
-        pagina = html.fromstring(requests.get(url).content)
+        requisicao = requests.get(url).content
+        pagina = html.fromstring(requisicao)
+        
         conteudo = pagina.xpath('.//td[@class="col2"]//a')
 
         for elem in conteudo:
