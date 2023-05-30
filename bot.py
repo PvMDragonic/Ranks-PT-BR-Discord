@@ -154,7 +154,7 @@ async def rank(ctx, *args):
 
         return '\n'.join(dados)
 
-    async def enviar_mensagem(dados, mensagem):
+    async def enviar_mensagem():
         await ctx.channel.send(
             content = f"{msg} {ctx.message.author.mention}", 
             file = discord.File(fp = io.StringIO(dados), 
@@ -189,7 +189,7 @@ async def rank(ctx, *args):
         
         dados = formatar_mensagem(query)
         msg = f"Rank Geral `{query[0].data_hora.strftime('%d/%m/%Y')}`"
-        return await enviar_mensagem(dados, msg)
+        return await enviar_mensagem()
     
     if "mensal" in args:
         if 7 > len(args) > 1:
@@ -237,7 +237,7 @@ async def rank(ctx, *args):
 
         dados = formatar_mensagem(query)
         msg = f"Rank Mensal de `{query[0].data_hora.data_passado}` até `{query[0].data_hora.data_atual}`"
-        return await enviar_mensagem(dados, msg)
+        return await enviar_mensagem()
     
     if "dxp" in args:
         if len(args) > 2:
@@ -271,7 +271,7 @@ async def rank(ctx, *args):
         
         dados = formatar_mensagem(query)
         msg = f"Rank DXP de `{query[0].data_hora.data_inicio}` até `{query[0].data_hora.data_fim}`"
-        return await enviar_mensagem(dados, msg)
+        return await enviar_mensagem()
     
     await ctx.message.channel.send(
         f"Você precisa especificar o tipo de rank! {ctx.message.author.mention}",
