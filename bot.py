@@ -247,12 +247,13 @@ async def rank(ctx, *args):
 
         quantos_atras = 0
 
-        if args[1].isdigit():
-            quantos_atras = int(args[1])
-        else:
-            return await ctx.message.channel.send(
-                f"Especifique um número inteiro que condiga a quantos Doubles atrás foi o DXP desejado! {ctx.message.author.mention}"
-            )
+        if len(args) > 1:
+            if args[1].isdigit():
+                quantos_atras = int(args[1])
+            else:
+                return await ctx.message.channel.send(
+                    f"Especifique um número inteiro que condiga a quantos Doubles atrás foi o DXP desejado! {ctx.message.author.mention}"
+                )
 
         query = backend.resgatar_rank_dxp(quantos_atras)
         if query == -1:
