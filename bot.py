@@ -1,9 +1,12 @@
 from discord.ext.commands import CommandNotFound
 from discord.ext import commands
+import xlsxwriter
 import threading
 import datetime
 import discord
 import time
+import json
+import csv
 import io
 
 import nomes_scrapper
@@ -56,26 +59,51 @@ def lista_comandos():
     embed.add_field(name = "", value = "᲼᲼")
 
     embed.add_field(
-        name = f'@Ranks PT-BR rank geral [data]', 
-        value = f'Lista o rank geral dos clãs pt-br.\n\nParâmetros opcionais:\n   [data] (DD MM AAAA) — Seleciona DXP anterior.\n*"@Ranks PT-BR rank geral 10 04 2023"*', 
+        name = f'@Ranks PT-BR rank geral [data] [formato]', 
+        value = f'Lista o rank geral dos clãs pt-br.\
+            \n\n__Parâmetros opcionais:__\
+            \n**[data] (DD MM AAAA)** — Específica uma data para o rankeamento;\
+            \n**[formato] (txt/json/csv/xlsx/cru)** — Especifica o formato do arquivo.\
+            \n\n__Exemplos:__\
+            \n*"@Ranks PT-BR rank geral 10 04 2023"*\
+            \n*"@Ranks PT-BR rank geral 10 04 2023 json"*\
+            \n*"@Ranks PT-BR rank geral cru"*', 
         inline = False
     )
 
     embed.add_field(name = "", value = "᲼᲼")
 
     embed.add_field(
-        name = f'@Ranks PT-BR rank mensal [datas]', 
-        value = f'Lista o rank do último mês dos clãs pt-br ativos.\n\nParâmetros opcionais:\n   [datas] (DD MM AAAA DD MM AAAA) — Seleciona período específico.\n*"@Ranks PT-BR rank mensal 10 04 2023 10 05 2023"*', 
+        name = f'@Ranks PT-BR rank mensal [datas] [formato]', 
+        value = f'Lista o rank do último mês dos clãs pt-br ativos.\
+            \n\n__Parâmetros opcionais:__\
+            \n**[datas] (DD MM AAAA DD MM AAAA)** — Especifica um período para o rankeamento.\
+            \n**[formato] (txt/json/csv/xlsx/cru)** — Especifica o formato do arquivo.\
+            \n\n__Exemplos:__\
+            \n*"@Ranks PT-BR rank mensal 10 04 2023 10 05 2023"*\
+            \n*"@Ranks PT-BR rank mensal 10 04 2023 10 05 2023 csv"*\
+            \n*"@Ranks PT-BR rank mensal xlsx"*', 
         inline = False
     )
 
     embed.add_field(name = "", value = "᲼᲼")
 
     embed.add_field(
-        name = f'@Ranks PT-BR rank dxp [número]', 
-        value = f'Lista o rank de Doubles passados dos clãs pt-br ativos.\n\nParâmetros opcionais:\n   [número] (n) — Seleciona DXP passado condigente ao número.\n*"@Ranks PT-BR rank dxp 1"*', 
+        name = f'@Ranks PT-BR rank dxp [quantos_atrás] [formato]', 
+        value = f'Lista o rank de Doubles passados dos clãs pt-br ativos.\
+            \n\n__Parâmetros opcionais:__\
+            \n**[quantos_atrás] (n)** — Seleciona DXP passado condigente ao número.\
+            \n**[formato] (txt/json/csv/xlsx/cru)** — Especifica o formato do arquivo.\
+            \n\n__Exemplos:__\
+            \n*"@Ranks PT-BR rank dxp 1"*\
+            \n*"@Ranks PT-BR rank dxp 1 cru"*\
+            \n*"@Ranks PT-BR rank dxp txt"*', 
         inline = False
     )
+
+    # Eis que \n não funciona no rodapé.
+    embed.add_field(name = "", value = "᲼᲼")
+    embed.set_footer(text = "OBS.: O formato cru dos dados limita o rankeamento ao top 50 devido ao tamanho.")
 
     return embed
 
@@ -114,7 +142,7 @@ async def dxp(ctx, *args):
                 inline = False
             )
         embed.add_field(name = "\n", value = "Para o rank completo, use **@Ranks PT-BR rank dxp**.", inline = False)
-    
+
         return await ctx.message.channel.send(embed = embed)
 
     # Double ainda não passou.
@@ -137,29 +165,133 @@ async def dxp(ctx, *args):
 
 @bot.command()
 async def rank(ctx, *args):
-    def formatar_mensagem(dados):
+    async def enviar_mensagem():
         dados = sorted(
-            dados, 
+            query, 
             reverse = True, 
             key = lambda x: x.exp_total
         )
 
-        dados = [
-            ' — '.join([
-                f'{index + 1}º', 
-                f'{clan.clan_id}'.replace("+", " "), 
-                f'{clan.exp_total:,}'.replace(",",".")
-            ]) for index, clan in enumerate(dados)
-        ]
+        # txt
+        if tipo == 1: 
+            dados = [
+                ' — '.join([
+                    f'{index + 1}º', 
+                    f'{clan.clan_id}'.replace("+", " "), 
+                    f'{clan.exp_total:,}'.replace(",",".")
+                ]) for index, clan in enumerate(dados)
+            ]
 
-        return '\n'.join(dados)
+            dados = '\n'.join(dados)
 
-    async def enviar_mensagem():
-        await ctx.channel.send(
-            content = f"{msg} {ctx.message.author.mention}", 
-            file = discord.File(fp = io.StringIO(dados), 
-            filename = f"{msg}.txt")
-        )
+            await ctx.channel.send(
+                content = f"{msg} {ctx.message.author.mention}", 
+                file = discord.File(
+                    fp = io.StringIO(dados), 
+                    filename = f"{msg}.txt"
+                )
+            )
+
+        # json
+        if tipo == 2:
+            dados = [
+                [index + 1, clan.clan_id, clan.exp_total] for index, clan in enumerate(dados)
+            ]
+
+            await ctx.channel.send(
+                content = f"{msg} {ctx.message.author.mention}", 
+                file = discord.File(
+                    fp = io.StringIO(
+                        json.dumps(
+                            obj = dados,
+                            indent = 4
+                        )
+                    ), 
+                    filename = f"{msg}.json"
+                )
+            )
+        
+        # csv
+        if tipo == 3:
+            saida = io.StringIO()
+            csv_writer = csv.writer(saida)
+
+            for clan in dados:
+                csv_writer.writerow([clan.clan_id, clan.exp_total])
+
+            saida.seek(0)
+
+            await ctx.channel.send(
+                content = f"{msg} {ctx.message.author.mention}", 
+                file = discord.File(
+                    filename = f"{msg}.csv",
+                    fp = saida 
+                )
+            )
+        
+        # xlsx
+        if tipo == 4:
+            saida = io.BytesIO()
+            workbook = xlsxwriter.Workbook(saida)
+            worksheet1 = workbook.add_worksheet()
+            worksheet1.set_column(0, 3, 20)
+
+            for index, clan in enumerate(dados):
+                worksheet1.write(f'A{index + 1}', clan.clan_id)
+                worksheet1.write(f'B{index + 1}', clan.exp_total)
+
+            workbook.close()
+            saida.seek(0) 
+        
+            await ctx.channel.send(
+                content = f"{msg} {ctx.message.author.mention}", 
+                file = discord.File(
+                    filename = f"{msg}.xlsx",
+                    fp = saida 
+                )
+            )
+
+        # cru
+        if tipo == 5:
+            dados = [
+                ' — '.join([
+                    f'{i + 1}º', 
+                    f'{dados[i].clan_id}'.replace("+", " "), 
+                    f'{dados[i].exp_total:,}'.replace(",",".")
+                ]) for i in range(50)
+            ]
+
+            dados = '\n'.join(dados)
+        
+            await ctx.message.channel.send(f"{msg} {ctx.message.author.mention}\n\n{dados}")
+
+    # 'args' vem como tupla, que é imutável.
+    args = list(args)
+
+    # Detecta se a pessoa botou o formato antes, depois ou até sem uma data.
+    if "txt" in args:
+        args.remove("txt")
+        tipo = 1
+    elif "json" in args:
+        args.remove("json")
+        tipo = 2
+    elif "csv" in args:
+        args.remove("csv")
+        tipo = 3
+    elif "xlsx" in args:
+        args.remove("xlsx")
+        tipo = 4
+    elif "cru" in args:
+        args.remove("cru")
+        tipo = 5
+    else:
+        # Se colocar algum formato que não é suportado.
+        if len(args) > 1:
+            if not args[1].isdigit():
+                args[1].pop()
+            if not args[-1].isdigit():
+                args[-1].pop()
+        tipo = 1
 
     if "geral" in args:
         if 4 > len(args) > 1:
@@ -187,7 +319,6 @@ async def rank(ctx, *args):
                 f"Não há registros do dia `{data.strftime('%d/%m/%Y')}`. {ctx.message.author.mention}"
             )
         
-        dados = formatar_mensagem(query)
         msg = f"Rank Geral `{query[0].data_hora.strftime('%d/%m/%Y')}`"
         return await enviar_mensagem()
     
@@ -235,7 +366,6 @@ async def rank(ctx, *args):
                 f"Não há dados registrados para o período começando em `{inicio.strftime('%d/%m/%Y')}`! {ctx.message.author.mention}"
             )
 
-        dados = formatar_mensagem(query)
         msg = f"Rank Mensal de `{query[0].data_hora.data_passado}` até `{query[0].data_hora.data_atual}`"
         return await enviar_mensagem()
     
@@ -269,7 +399,6 @@ async def rank(ctx, *args):
                 f"Não há dados suficientes para gerar um rank ainda; tente novamente dentro de 1 hora. {ctx.message.author.mention}"
             )
         
-        dados = formatar_mensagem(query)
         msg = f"Rank DXP de `{query[0].data_hora.data_inicio}` até `{query[0].data_hora.data_fim}`"
         return await enviar_mensagem()
     
