@@ -44,7 +44,44 @@ def loop_mensal():
         if datetime.date.today().day == 1:
             nomes_scrapper.buscar_clans()
 
-def lista_comandos():
+async def lista_comandos(message):
+    if backend.possui_nv_acesso(1, int(message.author.id)):
+        embed = discord.Embed(
+            title = f"COMANDOS DA MODERAÇÃO",  
+            color = 0x7a8ff5
+        )
+
+        embed.add_field(
+            name = f'@Ranks PT-BR criar dxp [data_inicio] [data_fim]', 
+            value = f'Registra um novo DXP.\n᲼᲼', 
+            inline = False
+        )
+
+        embed.add_field(
+            name = f'@Ranks PT-BR deletar dxp', 
+            value = f'Deleta o DXP registrado mais recente.\n᲼᲼', 
+            inline = False
+        )
+
+        embed.add_field(
+            name = f'@Ranks PT-BR adicionar clan [nome]', 
+            value = f'Adiciona um clã ao banco de dados do bot.\n᲼᲼', 
+            inline = False
+        )
+
+        embed.add_field(
+            name = f'@Ranks PT-BR remover clan [nome]', 
+            value = f'Remove um clã do banco de dados do bot.\n᲼᲼', 
+            inline = False
+        )
+
+        embed.set_footer(text = "OBS.: O uso desses comandos é registrado no log, com o nome de quem usou.")
+
+        await message.author.send(
+            message.author.mention, 
+            embed = embed
+        )
+
     embed = discord.Embed(
         title = f"LISTA DE COMANDOS",  
         color = 0x7a8ff5
@@ -52,11 +89,9 @@ def lista_comandos():
 
     embed.add_field(
         name = f'@Ranks PT-BR dxp', 
-        value = f'Mostra informações sobre o DXP.', 
+        value = f'Mostra informações sobre o DXP.\n᲼᲼', 
         inline = False
-    )
-
-    embed.add_field(name = "", value = "᲼᲼")
+    ) 
 
     embed.add_field(
         name = f'@Ranks PT-BR rank geral [data] [formato]', 
@@ -64,14 +99,12 @@ def lista_comandos():
             \n\n__Parâmetros opcionais:__\
             \n**[data] (DD MM AAAA)** — Específica uma data para o rankeamento;\
             \n**[formato] (txt/json/csv/xlsx/cru)** — Especifica o formato do arquivo.\
-            \n\n__Exemplos:__\
-            \n*"@Ranks PT-BR rank geral 10 04 2023"*\
-            \n*"@Ranks PT-BR rank geral 10 04 2023 json"*\
-            \n*"@Ranks PT-BR rank geral cru"*', 
+            \n```@Ranks PT-BR rank geral 10 04 2023\
+            \n@Ranks PT-BR rank geral 10 04 2023 json\
+            \n@Ranks PT-BR rank geral cru```\
+            \n᲼᲼', 
         inline = False
     )
-
-    embed.add_field(name = "", value = "᲼᲼")
 
     embed.add_field(
         name = f'@Ranks PT-BR rank mensal [datas] [formato]', 
@@ -79,14 +112,12 @@ def lista_comandos():
             \n\n__Parâmetros opcionais:__\
             \n**[datas] (DD MM AAAA DD MM AAAA)** — Especifica um período para o rankeamento.\
             \n**[formato] (txt/json/csv/xlsx/cru)** — Especifica o formato do arquivo.\
-            \n\n__Exemplos:__\
-            \n*"@Ranks PT-BR rank mensal 10 04 2023 10 05 2023"*\
-            \n*"@Ranks PT-BR rank mensal 10 04 2023 10 05 2023 csv"*\
-            \n*"@Ranks PT-BR rank mensal xlsx"*', 
+            \n```@Ranks PT-BR rank mensal 10 04 2023 10 05 2023\
+            \n@Ranks PT-BR rank mensal 10 04 2023 10 05 2023 csv\
+            \n@Ranks PT-BR rank mensal xlsx```\
+            \n᲼᲼', 
         inline = False
     )
-
-    embed.add_field(name = "", value = "᲼᲼")
 
     embed.add_field(
         name = f'@Ranks PT-BR rank dxp [quantos_atrás] [formato]', 
@@ -94,18 +125,19 @@ def lista_comandos():
             \n\n__Parâmetros opcionais:__\
             \n**[quantos_atrás] (n)** — Seleciona DXP passado condigente ao número.\
             \n**[formato] (txt/json/csv/xlsx/cru)** — Especifica o formato do arquivo.\
-            \n\n__Exemplos:__\
-            \n*"@Ranks PT-BR rank dxp 1"*\
-            \n*"@Ranks PT-BR rank dxp 1 cru"*\
-            \n*"@Ranks PT-BR rank dxp txt"*', 
+            \n```@Ranks PT-BR rank dxp 1\
+            \n@Ranks PT-BR rank dxp 1 cru\
+            \n@Ranks PT-BR rank dxp txt```\
+            \n᲼᲼', 
         inline = False
     )
 
-    # Eis que \n não funciona no rodapé.
-    embed.add_field(name = "", value = "᲼᲼")
     embed.set_footer(text = "OBS.: O formato cru dos dados limita o rankeamento ao top 50 devido ao tamanho.")
 
-    return embed
+    await message.channel.send(
+            message.author.mention, 
+            embed = embed
+        )
 
 @bot.command()
 async def dxp(ctx, *args):
@@ -404,13 +436,17 @@ async def rank(ctx, *args):
     
     await ctx.message.channel.send(
         f"Você precisa especificar o tipo de rank! {ctx.message.author.mention}",
-        embed = lista_comandos()
     )
 
 @bot.command()
 async def criar(ctx, *args):
     if not "dxp" in args:
         raise CommandNotFound
+    
+    if not backend.possui_nv_acesso(1, int(ctx.message.author.id)):
+        return await ctx.message.channel.send(
+            f"Você não tem permissão para acessar esse comando! {ctx.message.author.mention}"
+        )
 
     try:
         # o _ é pra desempacotar o 'dxp' que vem junto do comando.
@@ -441,17 +477,145 @@ async def criar(ctx, *args):
 
     if backend.verificar_dxp(data_comeco, data_fim):
         return await ctx.message.channel.send(
-            f"Já há um DXP registrado para as datas entre `{data_comeco.date()}` e `{data_fim.date()}`, {ctx.message.author.mention}!"
+            f"Já há um DXP registrado para as datas entre `{data_comeco.strftime('%d/%m/%Y')}` e `{data_fim.strftime('%d/%m/%Y')}`, {ctx.message.author.mention}!"
         )
 
     backend.adicionar_dxp(data_comeco, data_fim)
     await ctx.message.channel.send(
-        f"Double XP para as datas entre `{data_comeco.date()}` e `{data_fim.date()}` registrado com sucesso {ctx.message.author.mention}!"
+        f"Double XP para as datas entre `{data_comeco.strftime('%d/%m/%Y')}` e `{data_fim.strftime('%d/%m/%Y')}` registrado com sucesso {ctx.message.author.mention}!"
     )
 
-    msg = f"[{datetime.datetime.now()}] DXP registrado de {data_comeco} até {data_fim} por {ctx.message.author}."
+    msg = f"[{datetime.datetime.now()}] {ctx.message.author} registrou novo DXP de {data_comeco.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}."
     backend.adicionar_log(msg)
     print(msg)
+
+@bot.command()
+async def deletar(ctx, *args):
+    if not "dxp" in args:
+        raise CommandNotFound
+    
+    if not backend.possui_nv_acesso(1, int(ctx.message.author.id)):
+        return await ctx.message.channel.send(
+            f"Você não tem permissão para acessar esse comando! {ctx.message.author.mention}"
+        )
+    
+    datas = backend.deletar_dxp()
+
+    if not datas:
+        return await ctx.message.channel.send(
+            f"Não há outro DXP registrado para ser deletado! {ctx.message.author.mention}"
+        )
+
+    await ctx.message.channel.send(
+            f"O DXP de {datas[0].strftime('%d/%m/%Y')} até {datas[1].strftime('%d/%m/%Y')} foi deletado. {ctx.message.author.mention}"
+        )
+    
+    msg = f"[{datetime.datetime.now()}] {ctx.message.author} deletou o DXP de {datas[0].strftime('%d/%m/%Y')} até {datas[1].strftime('%d/%m/%Y')}."
+    backend.adicionar_log(msg)
+    print(msg)
+
+@bot.command()
+async def adicionar(ctx, *args):
+    if any([palavra in args for palavra in ["clan", "clã", "cla"]]):
+        if not backend.possui_nv_acesso(1, int(ctx.message.author.id)):
+            return await ctx.message.channel.send(
+                f"Você não tem permissão para acessar esse comando! {ctx.message.author.mention}"
+            )
+        
+        clan = args[1] 
+
+        if not nomes_scrapper.verificar_clan_existe(clan):
+            return await ctx.message.channel.send(
+                f"O clã `{clan}` não foi encontrado no site oficial do RuneScape. {ctx.message.author.mention}"
+            )
+
+        if not backend.adicionar_clan(clan):
+            return await ctx.message.channel.send(
+                f"O clã `{clan}` já está registrado. {ctx.message.author.mention}"
+            )
+        
+        msg = f"[{datetime.datetime.now()}] {ctx.message.author.name} adicionou o clã {clan}."
+        backend.adicionar_log(msg)
+        print(msg)
+
+        return await ctx.message.channel.send(
+            f"O clã `{clan}` foi registrado com sucesso. {ctx.message.author.mention}"
+        ) 
+        
+    if "mod" in args:
+        if not backend.possui_nv_acesso(2, int(ctx.message.author.id)):
+            return await ctx.message.channel.send(
+                f"Você não tem permissão para acessar esse comando! {ctx.message.author.mention}"
+            )
+        
+        try:
+            usuario = int(args[1])
+        except ValueError:
+            return await ctx.message.channel.send(
+                f"Você não inseriu um ID de usuário de Discord válido! {ctx.message.author.mention}"
+            )
+
+        if not backend.adicionar_moderador(usuario):
+            return await ctx.message.channel.send(
+                f"O ID `{usuario}` já está registrado como moderador. {ctx.message.author.mention}"
+            )
+        
+        msg = f"[{datetime.datetime.now()}] {ctx.message.author.name} adicionou {clan} à moderação."
+        backend.adicionar_log(msg)
+        print(msg)
+
+        await ctx.message.channel.send(
+            f"O ID `{usuario}` foi registrado como moderador com sucesso. {ctx.message.author.mention}"
+        ) 
+
+@bot.command()
+async def remover(ctx, *args):
+    if any([palavra in args for palavra in ["clan", "clã", "cla"]]):
+        if not backend.possui_nv_acesso(1, int(ctx.message.author.id)):
+            return await ctx.message.channel.send(
+                f"Você não tem permissão para acessar esse comando! {ctx.message.author.mention}"
+            )
+        
+        clan = args[1] 
+
+        if not backend.remover_clan(clan):
+            return await ctx.message.channel.send(
+                f"O clã `{clan}` não está registrado. {ctx.message.author.mention}"
+            )
+        
+        msg = f"[{datetime.datetime.now()}] {ctx.message.author.name} removeu o clã {clan}."
+        backend.adicionar_log(msg)
+        print(msg)
+
+        return await ctx.message.channel.send(
+            f"O clã `{clan}` foi removido com sucesso. {ctx.message.author.mention}"
+        ) 
+        
+    if "mod" in args:
+        if not backend.possui_nv_acesso(2, int(ctx.message.author.id)):
+            return await ctx.message.channel.send(
+                f"Você não tem permissão para acessar esse comando! {ctx.message.author.mention}"
+            )
+        
+        try:
+            usuario = int(args[1])
+        except ValueError:
+            return await ctx.message.channel.send(
+                f"Você não inseriu um ID de usuário de Discord válido! {ctx.message.author.mention}"
+            )
+
+        if not backend.remover_moderador(usuario):
+            return await ctx.message.channel.send(
+                f"O ID `{usuario}` não está registrado como moderador. {ctx.message.author.mention}"
+            )
+        
+        msg = f"[{datetime.datetime.now()}] {ctx.message.author.name} removeu {usuario} da moderação."
+        backend.adicionar_log(msg)
+        print(msg)
+
+        await ctx.message.channel.send(
+            f"O ID `{usuario}` foi removido da moderação com sucesso. {ctx.message.author.mention}"
+        ) 
 
 @bot.event
 async def on_ready():
@@ -471,15 +635,16 @@ async def on_message(message):
     try:
         if not bot.user.mentioned_in(message):
             return
+        
+        # Ignora mensagem privada.
+        if isinstance(message.channel, discord.channel.DMChannel):
+            return
 
         await message.channel.typing()
 
         # Se alguém só marcou o bot, sem pedir algum comando.
         if message.content == "<@1071957068262674582>":
-            return await message.channel.send(
-                message.author.mention, 
-                embed = lista_comandos()
-            )
+            return await lista_comandos(message)
         
         await bot.process_commands(message)
     except discord.errors.Forbidden as e:

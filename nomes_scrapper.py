@@ -15,6 +15,19 @@ fasttext.FastText.eprint = lambda x: None
 PROCESSOS = 2
 THREADS = 2
 
+def verificar_clan_existe(nome: str) -> bool:
+    try:
+        pagina_clan = f'https://secure.runescape.com/m=clan-home/l=3/a=869/clan/{nome}'
+        requisicao = requests.get(pagina_clan).content
+        conteudo = html.fromstring(requisicao)
+
+        if conteudo.xpath('.//h2[@id="noClanError"]'):
+            return False
+        
+        return True
+    except requests.exceptions.RequestException:
+        return False
+
 def validar_ptbr(nomes):
     MODEL = fasttext.load_model('lid.176.ftz')
     ptbr = []

@@ -55,7 +55,8 @@ def resgatar_rank_geral(data: date) -> list[Estatisticas]:
                 Estatisticas(*clan) for clan in db.consultar(
                     f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
                     FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                    WHERE data_hora BETWEEN '{data} 00:01:00' AND '{data} 23:59:00'"
+                    WHERE (data_hora BETWEEN '{data} 00:01:00' AND '{data} 23:59:00') \
+                    AND (arquivado = 'False')"
                 )
             ]
 
@@ -63,6 +64,7 @@ def resgatar_rank_geral(data: date) -> list[Estatisticas]:
             Estatisticas(*clan) for clan in db.consultar(
                 "SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
                 FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
+                WHERE arquivado = 'False' \
                 ORDER BY nome, data_hora DESC"
             )
         ]
@@ -83,6 +85,7 @@ def resgatar_rank_mensal(data_inicio: date, data_fim: date):
                 Estatisticas(*clan) for clan in db.consultar(
                     "SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
                     FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
+                    WHERE arquivado = 'False' \
                     ORDER BY nome, data_hora DESC"
                 ) 
             ]
@@ -93,7 +96,8 @@ def resgatar_rank_mensal(data_inicio: date, data_fim: date):
                 Estatisticas(*clan) for clan in db.consultar(
                     f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
                     FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                    WHERE data_hora BETWEEN '{mes_passado} 00:01:00' AND '{mes_passado} 23:59:00'"
+                    WHERE (data_hora BETWEEN '{mes_passado} 00:01:00' AND '{mes_passado} 23:59:00') \
+                    AND (arquivado = 'False')"
                 )
             ]
 
@@ -103,6 +107,7 @@ def resgatar_rank_mensal(data_inicio: date, data_fim: date):
                     Estatisticas(*clan) for clan in db.consultar(
                         "SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
                         FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
+                        WHERE arquivado = 'False' \
                         ORDER BY nome, data_hora"
                     )
                 ]
@@ -117,7 +122,8 @@ def resgatar_rank_mensal(data_inicio: date, data_fim: date):
                 Estatisticas(*clan) for clan in db.consultar(
                     f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
                     FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                    WHERE data_hora BETWEEN '{data_fim} 00:01:00' AND '{data_fim} 23:59:00'"
+                    WHERE (data_hora BETWEEN '{data_fim} 00:01:00' AND '{data_fim} 23:59:00') \
+                    AND (arquivado = 'False')"
                 ) 
             ]
 
@@ -128,7 +134,8 @@ def resgatar_rank_mensal(data_inicio: date, data_fim: date):
                 Estatisticas(*clan) for clan in db.consultar(
                     f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
                     FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                    WHERE data_hora BETWEEN '{data_inicio} 00:01:00' AND '{data_inicio} 23:59:00'"
+                    WHERE (data_hora BETWEEN '{data_inicio} 00:01:00' AND '{data_inicio} 23:59:00') \
+                    AND (arquivado = 'False')"
                 )
             ]
 
@@ -188,7 +195,8 @@ def resgatar_rank_dxp(quantos_atras: int) -> list:
             Estatisticas(*clan) for clan in db.consultar(
                 f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
                 FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                WHERE data_hora BETWEEN '{inicio}' AND '{fim}' \
+                WHERE (data_hora BETWEEN '{inicio}' AND '{fim}') \
+                AND (arquivado = 'False') \
                 ORDER BY nome, data_hora"
             )
         ]
@@ -201,7 +209,8 @@ def resgatar_rank_dxp(quantos_atras: int) -> list:
             Estatisticas(*clan) for clan in db.consultar(
                 f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
                 FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                WHERE data_hora BETWEEN '{inicio}' AND '{fim}' \
+                WHERE (data_hora BETWEEN '{inicio}' AND '{fim}') \
+                AND (arquivado = 'False') \
                 ORDER BY nome, data_hora DESC"
             )
         ]
@@ -279,6 +288,20 @@ def adicionar_dxp(data_comeco: datetime, data_fim: datetime) -> None:
     )
     db.fechar()
 
+def deletar_dxp() -> list[datetime]:
+    try:
+        db = Conexao()
+        query = db.consultar("SELECT * FROM dxp ORDER BY id DESC LIMIT 1")
+        
+        if query:
+            data_comeco, data_fim = query[0][1:3]
+            db.manipular(f"DELETE FROM dxp WHERE data_comeco = '{data_comeco}' AND data_fim = '{data_fim}'")
+            return [data_comeco, data_fim]
+        
+        return None
+    finally:
+        db.fechar()
+
 def adicionar_estatisticas(lista: list[Estatisticas]) -> None:
     db = Conexao()
     for clan in lista:
@@ -288,13 +311,79 @@ def adicionar_estatisticas(lista: list[Estatisticas]) -> None:
         )
     db.fechar()
 
-def adicionar_clans(lista: list) -> None:
+def adicionar_clans(clans: list[str]) -> None:
     db = Conexao()
-    for nome in lista:
-        if not db.consultar(f"SELECT 1 FROM clans WHERE nome='{nome}'"):
-            db.manipular(f"INSERT INTO clans (nome) VALUES ('{nome}')")
+    for nome in clans:
+        if not db.consultar(f"SELECT * FROM clans WHERE nome = '{nome}'"):
+            db.manipular(f"INSERT INTO clans (nome, arquivado) VALUES ('{nome}', 'False')")
     db.fechar()
+
+def adicionar_clan(clan: str) -> bool:
+    try:
+        db = Conexao()
+        query = db.consultar(f"SELECT * FROM clans WHERE nome = '{clan}'")
+
+        if not query:
+            db.manipular(f"INSERT INTO clans (nome, arquivado) VALUES ('{clan}', 'False')")
+            return True
+        
+        # Clã existe, mas arquivado.
+        if query[3] == True:
+            db.manipular(f"UPDATE clans SET arquivado = 'False' WHERE nome = '{clan}'")
+            return True
+        
+        return False
+    finally:
+        db.fechar()
+
+def remover_clan(clan: str) -> bool:
+    try:
+        db = Conexao()
+        query = db.consultar(f"SELECT * FROM clans WHERE nome = '{clan}'")
+
+        if query:
+            db.manipular(f"UPDATE clans SET arquivado = 'True' WHERE nome = '{clan}'")
+            return True
+        
+        return False
+    finally:
+        db.fechar()
 
 def adicionar_log(texto: str) -> None:
     with open('log.txt', 'a') as arqv:
         arqv.writelines(f'{texto}\n')
+
+def possui_nv_acesso(nv_requerido: int, id_usuario: int) -> bool:
+    try:
+        db = Conexao()
+        nv_acesso = db.consultar(f"SELECT nv_acesso FROM admins WHERE id_discord = {id_usuario};")
+        
+        if nv_acesso:
+            nv_acesso = nv_acesso[0][0]
+            return nv_requerido <= nv_acesso
+        
+        return False
+    finally:
+        db.fechar()
+
+def adicionar_moderador(id_usuario: int) -> bool:
+    try:
+        db = Conexao()
+        if not db.consultar(f"SELECT * FROM admins WHERE id_discord = {id_usuario}"):
+            db.manipular(f"INSERT INTO admins(id_discord, nv_acesso) VALUES ({id_usuario}, 1)")
+            return True
+        
+        return False
+    finally:
+        db.fechar()
+
+def remover_moderador(id_usuario: int) -> bool:
+    try:
+        db = Conexao()
+        if db.consultar(f"SELECT * FROM admins WHERE id_discord = {id_usuario}"):
+            db.manipular(f"DELETE FROM admins WHERE id_discord = {id_usuario}")
+            return True
+        
+        return False
+    finally:
+        db.fechar()
