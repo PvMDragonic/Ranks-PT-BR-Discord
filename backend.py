@@ -16,8 +16,12 @@ class Conexao(object):
             cur.execute(sql)
             cur.close()
             self._db.commit()
+            return True
         except Exception as e:
-            print(e)
+            msg = f"[{datetime.now()}] Erro durante manipulação: {e}"
+            adicionar_log(msg)
+            print(msg)
+            return False
 
     def consultar(self, sql) -> list[tuple]:
         try:
@@ -25,7 +29,9 @@ class Conexao(object):
             cur.execute(sql)
             return cur.fetchall()
         except Exception as e:
-            print(e)
+            msg = f"[{datetime.now()}] Erro durante consulta: {e}"
+            adicionar_log(msg)
+            print(msg)
             return None
 
     def fechar(self):
@@ -282,11 +288,11 @@ def dxp_restante() -> str:
         db.fechar()
 
 def adicionar_dxp(data_comeco: datetime, data_fim: datetime) -> None:
-    db = Conexao()
-    db.manipular(
-        f"INSERT INTO dxp (data_comeco, data_fim) VALUES ('{data_comeco}', '{data_fim}')"
-    )
-    db.fechar()
+    try:
+        db = Conexao()
+        return db.manipular(f"INSERT INTO dxp (data_comeco, data_fim) VALUES ('{data_comeco}', '{data_fim}')")
+    finally:
+        db.fechar()
 
 def deletar_dxp() -> list[datetime]:
     try:
@@ -307,7 +313,7 @@ def adicionar_estatisticas(lista: list[Estatisticas]) -> None:
     for clan in lista:
         db.manipular(
             f"INSERT INTO estatisticas (id_clan, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total) \
-                VALUES ({clan.clan_id}, '{clan.data_hora}', {clan.membros}, {clan.nv_fort}, {clan.nv_total}, {clan.nv_cb_total}, {clan.exp_total})"
+            VALUES ({clan.clan_id}, '{clan.data_hora}', {clan.membros}, {clan.nv_fort}, {clan.nv_total}, {clan.nv_cb_total}, {clan.exp_total})"
         )
     db.fechar()
 
@@ -324,13 +330,11 @@ def adicionar_clan(clan: str) -> bool:
         query = db.consultar(f"SELECT * FROM clans WHERE nome = '{clan}'")
 
         if not query:
-            db.manipular(f"INSERT INTO clans (nome, arquivado) VALUES ('{clan}', 'False')")
-            return True
+            return db.manipular(f"INSERT INTO clans (nome, arquivado) VALUES ('{clan}', 'False')")
         
         # Clã existe, mas arquivado.
         if query[3] == True:
-            db.manipular(f"UPDATE clans SET arquivado = 'False' WHERE nome = '{clan}'")
-            return True
+            return db.manipular(f"UPDATE clans SET arquivado = 'False' WHERE nome = '{clan}'")
         
         return False
     finally:
@@ -342,9 +346,8 @@ def remover_clan(clan: str) -> bool:
         query = db.consultar(f"SELECT * FROM clans WHERE nome = '{clan}'")
 
         if query:
-            db.manipular(f"UPDATE clans SET arquivado = 'True' WHERE nome = '{clan}'")
-            return True
-        
+            return db.manipular(f"UPDATE clans SET arquivado = 'True' WHERE nome = '{clan}'")
+                
         return False
     finally:
         db.fechar()
@@ -369,9 +372,9 @@ def possui_nv_acesso(nv_requerido: int, id_usuario: int) -> bool:
 def adicionar_moderador(id_usuario: int) -> bool:
     try:
         db = Conexao()
+        
         if not db.consultar(f"SELECT * FROM admins WHERE id_discord = {id_usuario}"):
-            db.manipular(f"INSERT INTO admins(id_discord, nv_acesso) VALUES ({id_usuario}, 1)")
-            return True
+            return db.manipular(f"INSERT INTO admins(id_discord, nv_acesso) VALUES ({id_usuario}, 1)")
         
         return False
     finally:
@@ -380,9 +383,9 @@ def adicionar_moderador(id_usuario: int) -> bool:
 def remover_moderador(id_usuario: int) -> bool:
     try:
         db = Conexao()
+        
         if db.consultar(f"SELECT * FROM admins WHERE id_discord = {id_usuario}"):
-            db.manipular(f"DELETE FROM admins WHERE id_discord = {id_usuario}")
-            return True
+            return db.manipular(f"DELETE FROM admins WHERE id_discord = {id_usuario}")        
         
         return False
     finally:

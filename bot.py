@@ -480,14 +480,14 @@ async def criar(ctx, *args):
             f"Já há um DXP registrado para as datas entre `{data_comeco.strftime('%d/%m/%Y')}` e `{data_fim.strftime('%d/%m/%Y')}`, {ctx.message.author.mention}!"
         )
 
-    backend.adicionar_dxp(data_comeco, data_fim)
-    await ctx.message.channel.send(
-        f"Double XP para as datas entre `{data_comeco.strftime('%d/%m/%Y')}` e `{data_fim.strftime('%d/%m/%Y')}` registrado com sucesso {ctx.message.author.mention}!"
-    )
+    if backend.adicionar_dxp(data_comeco, data_fim):
+        await ctx.message.channel.send(
+            f"Double XP para as datas entre `{data_comeco.strftime('%d/%m/%Y')}` e `{data_fim.strftime('%d/%m/%Y')}` registrado com sucesso {ctx.message.author.mention}!"
+        )
 
-    msg = f"[{datetime.datetime.now()}] {ctx.message.author} registrou novo DXP de {data_comeco.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}."
-    backend.adicionar_log(msg)
-    print(msg)
+        msg = f"[{datetime.datetime.now()}] {ctx.message.author} registrou novo DXP de {data_comeco.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}."
+        backend.adicionar_log(msg)
+        print(msg)
 
 @bot.command()
 async def deletar(ctx, *args):
