@@ -6,15 +6,16 @@ import time
 
 import backend
 
-def atualizar_exp(clans: list[backend.Clan]):
+def atualizar_exp(clans: list):
     estatisticas = []
 
     for clan in clans:
         tentativas = 3
+        clan_id, clan_nome = clan
 
         while True:
             try:
-                pagina_clan = f'https://secure.runescape.com/m=clan-hiscores/l=3/a=869/compare.ws?clanName={clan.nome}'
+                pagina_clan = f'https://secure.runescape.com/m=clan-hiscores/l=3/a=869/compare.ws?clanName={clan_nome}'
                 requisicao = requests.get(pagina_clan).content
                 conteudo = html.fromstring(requisicao)
 
@@ -29,22 +30,22 @@ def atualizar_exp(clans: list[backend.Clan]):
                 nv_fort = [elem.replace(".", "") for elem in quadro_visao_geral[11].text_content().split("\n") if elem.replace(".", "").isnumeric()][0]
 
                 estatisticas.append(
-                    backend.Estatisticas(
-                        clan.id,
+                    [
+                        clan_id,
                         datetime.now(),
                         membros,
                         nv_fort,
                         nv_total,
                         nv_cb_total,
                         exp_total
-                    )
+                    ]
                 )
 
                 break
             except (requests.exceptions.RequestException, IndexError) as erro:
                 tentativas -= tentativas
                 if tentativas == 0:
-                    msg_log = f"[{datetime.now()}] Erro na coleta de XP de {clan.nome}: {erro}"
+                    msg_log = f"[{datetime.now()}] Erro na coleta de XP de {clan_nome}: {erro}"
                     backend.adicionar_log(msg_log)
                     print(msg_log)
                     break

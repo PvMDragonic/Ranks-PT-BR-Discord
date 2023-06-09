@@ -156,9 +156,9 @@ async def dxp(ctx, *args):
             return await ctx.message.channel.send(embed = embed)           
         
         ranks = sorted(
-            ranks, 
+            ranks[2], # Index 0 e 1 são as datas de início e fim, respectivamente.
             reverse = True, 
-            key = lambda x: x.exp_total
+            key = lambda x: x[6] # XP total
         )[0:10]
 
         embed = discord.Embed(
@@ -169,8 +169,8 @@ async def dxp(ctx, *args):
 
         for index, clan in enumerate(ranks):
             embed.add_field(
-                name = f'*{index + 1}º — {clan.clan_id.replace("+", " ")}*', 
-                value = f'{clan.exp_total:,}'.replace(",","."), 
+                name = f'*{index + 1}º — {clan[0].replace("+", " ")}*', # Nome
+                value = f'{clan[6]:,}'.replace(",","."), # XP total
                 inline = False
             )
         embed.add_field(name = "\n", value = "Para o rank completo, use **@Ranks PT-BR rank dxp**.", inline = False)
@@ -199,9 +199,9 @@ async def dxp(ctx, *args):
 async def rank(ctx, *args):
     async def enviar_mensagem():
         dados = sorted(
-            query, 
+            query[2], # Index 0 e 1 são as datas de início e fim, respectivamente.
             reverse = True, 
-            key = lambda x: x.exp_total
+            key = lambda x: x[6] # XP total
         )
 
         # txt
@@ -209,9 +209,10 @@ async def rank(ctx, *args):
             dados = [
                 ' — '.join([
                     f'{index + 1}º', 
-                    f'{clan.clan_id}'.replace("+", " "), 
-                    f'{clan.exp_total:,}'.replace(",",".")
-                ]) for index, clan in enumerate(dados)
+                    f'{clan[0]}'.replace("+", " "), # Nome
+                    f'{clan[6]:,}'.replace(",",".") # XP total
+                ]) 
+                for index, clan in enumerate(dados)
             ]
 
             dados = '\n'.join(dados)
@@ -227,7 +228,12 @@ async def rank(ctx, *args):
         # json
         if tipo == 2:
             dados = [
-                [index + 1, clan.clan_id, clan.exp_total] for index, clan in enumerate(dados)
+                [  
+                    index + 1, 
+                    clan[0], 
+                    clan[6]
+                ] 
+                for index, clan in enumerate(dados)
             ]
 
             await ctx.channel.send(
@@ -249,7 +255,12 @@ async def rank(ctx, *args):
             csv_writer = csv.writer(saida)
 
             for clan in dados:
-                csv_writer.writerow([clan.clan_id, clan.exp_total])
+                csv_writer.writerow(
+                    [
+                        clan[0], 
+                        clan[6]
+                    ]
+                )
 
             saida.seek(0)
 
@@ -269,8 +280,8 @@ async def rank(ctx, *args):
             worksheet1.set_column(0, 3, 20)
 
             for index, clan in enumerate(dados):
-                worksheet1.write(f'A{index + 1}', clan.clan_id)
-                worksheet1.write(f'B{index + 1}', clan.exp_total)
+                worksheet1.write(f'A{index + 1}', clan[0])
+                worksheet1.write(f'B{index + 1}', clan[6])
 
             workbook.close()
             saida.seek(0) 
@@ -288,9 +299,10 @@ async def rank(ctx, *args):
             dados = [
                 ' — '.join([
                     f'{i + 1}º', 
-                    f'{dados[i].clan_id}'.replace("+", " "), 
-                    f'{dados[i].exp_total:,}'.replace(",",".")
-                ]) for i in range(50)
+                    f'{dados[i][0]}'.replace("+", " "), 
+                    f'{dados[i][6]:,}'.replace(",",".")
+                ]) 
+                for i in range(50)
             ]
 
             dados = '\n'.join(dados)
@@ -351,7 +363,8 @@ async def rank(ctx, *args):
                 f"Não há registros do dia `{data.strftime('%d/%m/%Y')}`. {ctx.message.author.mention}"
             )
         
-        msg = f"Rank Geral `{query[0].data_hora.strftime('%d/%m/%Y')}`"
+        # Escolhendo um valor aleatório pra servir de referência pra data.
+        msg = f"Rank Geral `{query[0][1].strftime('%d/%m/%Y')}`"
         return await enviar_mensagem()
     
     if "mensal" in args:
@@ -398,7 +411,7 @@ async def rank(ctx, *args):
                 f"Não há dados registrados para o período começando em `{inicio.strftime('%d/%m/%Y')}`! {ctx.message.author.mention}"
             )
 
-        msg = f"Rank Mensal de `{query[0].data_hora.data_passado}` até `{query[0].data_hora.data_atual}`"
+        msg = f"Rank Mensal de `{query[0]}` até `{query[1]}`"
         return await enviar_mensagem()
     
     if "dxp" in args:
@@ -431,7 +444,7 @@ async def rank(ctx, *args):
                 f"Não há dados suficientes para gerar um rank ainda; tente novamente dentro de 1 hora. {ctx.message.author.mention}"
             )
         
-        msg = f"Rank DXP de `{query[0].data_hora.data_inicio}` até `{query[0].data_hora.data_fim}`"
+        msg = f"Rank DXP de `{query[0]}` até `{query[1]}`"
         return await enviar_mensagem()
     
     await ctx.message.channel.send(
