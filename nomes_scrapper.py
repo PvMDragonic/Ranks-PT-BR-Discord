@@ -1,6 +1,7 @@
 from multiprocessing import Process
 from threading import Thread
 from datetime import datetime
+from typing import Union
 from lxml import html
 import fasttext
 import requests
@@ -15,7 +16,13 @@ fasttext.FastText.eprint = lambda x: None
 PROCESSOS = 2
 THREADS = 2
 
-def verificar_clan_existe(nome: str) -> bool:
+def buscar_uid(nome: str) -> str:
+    pagina_clan = f'https://secure.runescape.com/m=clan-hiscores/l=3/a=869/compare.ws?clanName={nome}'
+    requisicao = requests.get(pagina_clan).content
+    conteudo = html.fromstring(requisicao)
+    return conteudo.xpath('.//input[@name="clanId"]/@value')[0]
+
+def verificar_clan_existe(nome: str) -> Union[str, bool]:
     try:
         pagina_clan = f'https://secure.runescape.com/m=clan-home/l=3/a=869/clan/{nome}'
         requisicao = requests.get(pagina_clan).content
@@ -24,7 +31,7 @@ def verificar_clan_existe(nome: str) -> bool:
         if conteudo.xpath('.//h2[@id="noClanError"]'):
             return False
         
-        return True
+        return buscar_uid(nome)
     except requests.exceptions.RequestException:
         return False
 
@@ -51,7 +58,9 @@ def validar_ptbr(nomes):
                 ]
 
                 if any(resultado):
-                    ptbr.append(nome)
+                    ptbr.append(
+                        [buscar_uid(nome), nome]
+                    )
                     
                 break
             except (requests.exceptions.RequestException, IndexError) as erro:

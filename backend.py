@@ -40,7 +40,11 @@ class Conexao(object):
 def resgatar_clans() -> list:
     try:
         db = Conexao()
-        return db.consultar("SELECT * FROM clans")
+        return db.consultar(
+            "SELECT DISTINCT ON (id_clan) id_clan, nome \
+            FROM nomes \
+            ORDER BY id_clan, data_alterado DESC"
+        )
     finally:
         db.fechar()
 
@@ -50,17 +54,29 @@ def resgatar_rank_geral(data: date) -> list[str]:
 
         if data:
             return db.consultar(
-                f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
-                FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                WHERE (data_hora BETWEEN '{data} 00:01:00' AND '{data} 23:59:00') \
-                AND (arquivado = 'False')"
+                f"SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
+                FROM clans c \
+                JOIN ( \
+                    SELECT DISTINCT ON (id_clan) id_clan, nome \
+                    FROM nomes \
+                    ORDER BY id_clan, data_alterado DESC \
+                ) n ON c.id = n.id_clan \
+                JOIN estatisticas e ON c.id = e.id_clan \
+                WHERE c.arquivado = false \
+                AND e.data_hora BETWEEN '{data} 00:01:00' AND '{data} 23:59:00'"
             )
 
         return db.consultar(
-            "SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
-            FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-            WHERE arquivado = 'False' \
-            ORDER BY nome, data_hora DESC"
+            "SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
+            FROM clans c \
+            JOIN ( \
+                SELECT DISTINCT ON (id_clan) id_clan, nome \
+                FROM nomes \
+                ORDER BY id_clan, data_alterado DESC \
+            ) n ON c.id = n.id_clan \
+            JOIN estatisticas e ON c.id = e.id_clan \
+            WHERE c.arquivado = false \
+            ORDER BY n.nome, e.data_hora DESC"
         )
     finally:
         db.fechar()
@@ -72,28 +88,47 @@ def resgatar_rank_mensal(data_inicio: date, data_fim: date):
         # Não especificou mês; assume data mais recente.
         if data_inicio == None:
             fim = db.consultar(
-                "SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
-                FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                WHERE arquivado = 'False' \
-                ORDER BY nome, data_hora DESC"
-            ) 
+                "SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
+                FROM clans c \
+                JOIN ( \
+                    SELECT DISTINCT ON (id_clan) id_clan, nome \
+                    FROM nomes \
+                    ORDER BY id_clan, data_alterado DESC \
+                ) n ON c.id = n.id_clan \
+                JOIN estatisticas e ON c.id = e.id_clan \
+                WHERE c.arquivado = false \
+                ORDER BY n.nome, e.data_hora DESC"
+            )
 
-            mes_passado = fim[0].data_hora.date() - timedelta(days = 30)
+            mes_passado = fim[0][2].date() - timedelta(days = 30)
 
             inicio = db.consultar(
-                f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
-                FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                WHERE (data_hora BETWEEN '{mes_passado} 00:01:00' AND '{mes_passado} 23:59:00') \
-                AND (arquivado = 'False')"
+                f"SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
+                FROM clans c \
+                JOIN ( \
+                    SELECT DISTINCT ON (id_clan) id_clan, nome \
+                    FROM nomes \
+                    ORDER BY id_clan, data_alterado DESC \
+                ) n ON c.id = n.id_clan \
+                JOIN estatisticas e ON c.id = e.id_clan \
+                WHERE c.arquivado = false \
+                AND (data_hora BETWEEN '{mes_passado} 00:01:00' AND '{mes_passado} 23:59:00') \
+                ORDER BY n.nome, e.exp_total"
             )
 
             # Pega a data mais antiga disponível.
             if not inicio:
                 inicio = db.consultar(
-                    "SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
-                    FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                    WHERE arquivado = 'False' \
-                    ORDER BY nome, data_hora"
+                    "SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
+                    FROM clans c \
+                    JOIN ( \
+                        SELECT DISTINCT ON (id_clan) id_clan, nome \
+                        FROM nomes \
+                        ORDER BY id_clan, data_alterado DESC \
+                    ) n ON c.id = n.id_clan \
+                    JOIN estatisticas e ON c.id = e.id_clan \
+                    WHERE c.arquivado = false \
+                    ORDER BY n.nome, e.data_hora"
                 )
         else:
             hoje = datetime.now().date()
@@ -105,44 +140,52 @@ def resgatar_rank_mensal(data_inicio: date, data_fim: date):
                 return -2
             
             fim = db.consultar(
-                f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
-                FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                WHERE (data_hora BETWEEN '{data_fim} 00:01:00' AND '{data_fim} 23:59:00') \
-                AND (arquivado = 'False')"
+                f"SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
+                FROM clans c \
+                JOIN ( \
+                    SELECT DISTINCT ON (id_clan) id_clan, nome \
+                    FROM nomes \
+                    ORDER BY id_clan, data_alterado DESC \
+                ) n ON c.id = n.id_clan \
+                JOIN estatisticas e ON c.id = e.id_clan \
+                WHERE c.arquivado = false \
+                AND (data_hora BETWEEN '{data_fim} 00:01:00' AND '{data_fim} 23:59:00') \
+                ORDER BY n.nome, e.exp_total"
             ) 
 
             if not fim:
                 return -3
 
             inicio = db.consultar(
-                f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
-                FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-                WHERE (data_hora BETWEEN '{data_inicio} 00:01:00' AND '{data_inicio} 23:59:00') \
-                AND (arquivado = 'False')"
+                f"SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
+                FROM clans c \
+                JOIN ( \
+                    SELECT DISTINCT ON (id_clan) id_clan, nome \
+                    FROM nomes \
+                    ORDER BY id_clan, data_alterado DESC \
+                ) n ON c.id = n.id_clan \
+                JOIN estatisticas e ON c.id = e.id_clan \
+                WHERE c.arquivado = false \
+                AND (data_hora BETWEEN '{data_inicio} 00:01:00' AND '{data_inicio} 23:59:00') \
+                ORDER BY n.nome, e.exp_total"
             )
 
             if not inicio:
                 return -4
 
-        # Pegando um valor aleatório pra servir de referência pra data.
-        data_hora_inicio = inicio[0][1].strftime('%d/%m/%Y')
-        data_hora_fim = fim[0][1].strftime('%d/%m/%Y')
+        # Pegando um valor qualquer pra servir de referência pra data.
+        data_hora_inicio = inicio[0][2].strftime('%d/%m/%Y')
+        data_hora_fim = fim[0][2].strftime('%d/%m/%Y')
+        rank = [
+            (nome, final_exp - inicio_exp)
+            for (nome, final_exp, _), (_, inicio_exp, _) in zip(fim, inicio)
+            if final_exp != inicio_exp
+        ]
 
         return [
             data_hora_inicio,
             data_hora_fim,
-            [
-                [
-                    f[0], # Nome
-                    f[2] - i[2], # Quantos membros
-                    f[3] - i[3], # Qual nível da fort
-                    f[4] - i[4], # Qual nível total
-                    f[5] - i[5], # Qual nível total de combate
-                    f[6] - i[6] # Quanto de exp total
-                ]
-                for f, i in zip(fim, inicio)
-                if f[6] != i[6] # Se teve algum XP feito nesse período.
-            ] 
+            rank
         ]
     finally:
         db.fechar()
@@ -177,11 +220,17 @@ def resgatar_rank_dxp(quantos_atras: int) -> list:
             fim = double_atual[2]
             
         xp_inicio = db.consultar(
-            f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
-            FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-            WHERE (data_hora BETWEEN '{inicio}' AND '{fim}') \
-            AND (arquivado = 'False') \
-            ORDER BY nome, data_hora"
+            f"SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
+            FROM clans c \
+            JOIN ( \
+                SELECT DISTINCT ON (id_clan) id_clan, nome \
+                FROM nomes \
+                ORDER BY id_clan, data_alterado DESC \
+            ) n ON c.id = n.id_clan \
+            JOIN estatisticas e ON c.id = e.id_clan \
+            WHERE c.arquivado = false \
+            AND (data_hora BETWEEN '{inicio}' AND '{fim}') \
+            ORDER BY n.nome, e.exp_total"
         )
 
         # DXP começou mas ainda não houve a primeira coleta de XP.
@@ -189,43 +238,43 @@ def resgatar_rank_dxp(quantos_atras: int) -> list:
             return -3
 
         xp_fim = db.consultar(
-            f"SELECT DISTINCT ON (nome) nome, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total \
-            FROM estatisticas JOIN clans ON estatisticas.id_clan = clans.id \
-            WHERE (data_hora BETWEEN '{inicio}' AND '{fim}') \
-            AND (arquivado = 'False') \
-            ORDER BY nome, data_hora DESC"
+            f"SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
+            FROM clans c \
+            JOIN ( \
+                SELECT DISTINCT ON (id_clan) id_clan, nome \
+                FROM nomes \
+                ORDER BY id_clan, data_alterado DESC \
+            ) n ON c.id = n.id_clan \
+            JOIN estatisticas e ON c.id = e.id_clan \
+            WHERE c.arquivado = false \
+            AND (data_hora BETWEEN '{inicio}' AND '{fim}') \
+            ORDER BY n.nome, e.exp_total DESC"
         )
 
         # Só houve uma coleta de XP desde o início do Double.
         if xp_inicio == xp_fim:
             return -3
 
-        # Pegando um valor aleatório pra servir de referência pra data.
-        data_hora_inicio = xp_inicio[0][1].strftime('%d/%m/%Y %H:%M')
-        data_hora_fim = xp_fim[0][1].strftime('%d/%m/%Y %H:%M')
+        # Pegando um valor qualquer pra servir de referência pra data.
+        data_hora_inicio = xp_inicio[0][2].strftime('%d/%m/%Y %H:%M')
+        data_hora_fim = xp_fim[0][2].strftime('%d/%m/%Y %H:%M')
+        rank = [
+            (nome, final_exp - inicio_exp)
+            for (nome, final_exp, _), (_, inicio_exp, _) in zip(xp_fim, xp_inicio)
+        ]
 
         return [
             data_hora_inicio,
             data_hora_fim,
-            [
-                [
-                    f[0], # Nome
-                    f[2] - i[2], # Quantos membros
-                    f[3] - i[3], # Qual nível da fort
-                    f[4] - i[4], # Qual nível total
-                    f[5] - i[5], # Qual nível total de combate
-                    f[6] - i[6] # Quanto de exp total
-                ]
-                for f, i in zip(fim, inicio)
-            ]
+            rank
         ]
     finally:
         db.fechar()
 
-def resgatar_data_dxp() -> datetime:
+def resgatar_data_dxp() -> list[datetime]:
     try:
         db = Conexao()
-        datahora = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")[0]
+        datahora = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC LIMIT 1")[0]
         return datahora
     finally:
         db.fechar()
@@ -252,8 +301,7 @@ def dxp_acontecendo() -> bool:
 def dxp_restante() -> str:
     try:
         db = Conexao()
-        datas_dxp = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")[0]
-        fim = datas_dxp[2]
+        fim = db.consultar("SELECT data_fim FROM dxp ORDER BY data_comeco DESC LIMIT 1")[0][0]
         restante = fim - datetime.now()
 
         if restante.days >= 1:
@@ -290,32 +338,42 @@ def deletar_dxp() -> list[datetime]:
 
 def adicionar_estatisticas(lista: list[str]) -> None:
     db = Conexao()
-    for clan in lista:
+    for (id, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total) in lista:
         db.manipular(
             f"INSERT INTO estatisticas (id_clan, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total) \
-            VALUES ({clan[0]}, '{clan[1]}', {clan[2]}, {clan[3]}, {clan[4]}, {clan[5]}, {clan[6]})"
+            VALUES ({id}, '{data_hora}', {membros}, {nv_fort}, {nv_total}, {nv_cb_total}, {exp_total})"
         )
     db.fechar()
 
-def adicionar_clans(clans: list[str]) -> None:
+def adicionar_clans(clans: list[list[str]]) -> None:
     db = Conexao()
-    for nome in clans:
-        if not db.consultar(f"SELECT * FROM clans WHERE nome = '{nome}'"):
-            db.manipular(f"INSERT INTO clans (nome, arquivado) VALUES ('{nome}', 'False')")
+    for clan in clans:
+        id, nome = clan
+
+        if not db.consultar(f"SELECT * FROM clans WHERE id = '{id}'"):
+            db.manipular(f"INSERT INTO clans (id, arquivado) VALUES ('{id}', 'False')")
+            continue
+        
+        ultimo_nome = db.consultar(f"SELECT nome FROM nomes WHERE id_clan = {id} ORDER BY data_alterado DESC LIMIT 1 ")
+        if ultimo_nome != nome:
+            db.manipular(f"INSERT INTO nomes (id_clan, nome, data_alterado) VALUES ({id}, '{nome}', '{datetime.now().date()}')")
     db.fechar()
 
-def adicionar_clan(clan: str) -> bool:
+def adicionar_clan(id: int, nome: str) -> bool:
     try:
         db = Conexao()
-        query = db.consultar(f"SELECT * FROM clans WHERE nome = '{clan}'")
 
-        if not query:
-            return db.manipular(f"INSERT INTO clans (nome, arquivado) VALUES ('{clan}', 'False')")
+        if not db.consultar(f"SELECT * FROM clans WHERE id = '{id}'"):
+            db.manipular(f"INSERT INTO clans (id, arquivado) VALUES ('{id}', 'False')")
+        else:
+            return False
         
-        # Clã existe, mas arquivado.
-        if query[3] == True:
-            return db.manipular(f"UPDATE clans SET arquivado = 'False' WHERE nome = '{clan}'")
-        
+        ultimo_nome = db.consultar(f"SELECT nome FROM nomes WHERE id_clan = '{id}' ORDER BY data_alterado DESC LIMIT 1")
+        if ultimo_nome != nome:
+            return db.manipular(
+                f"INSERT INTO nomes (id_clan, nome, data_alterado) VALUES ('{id}', '{nome}', '{datetime.now().date()}')"             
+            )
+
         return False
     finally:
         db.fechar()
@@ -323,10 +381,10 @@ def adicionar_clan(clan: str) -> bool:
 def remover_clan(clan: str) -> bool:
     try:
         db = Conexao()
-        query = db.consultar(f"SELECT * FROM clans WHERE nome = '{clan}'")
+        query = db.consultar(f"SELECT id_clan FROM nomes WHERE nome = '{clan}'")
 
         if query:
-            return db.manipular(f"UPDATE clans SET arquivado = 'True' WHERE nome = '{clan}'")
+            return db.manipular(f"UPDATE clans SET arquivado = 'True' WHERE id = '{query[0]}'")
                 
         return False
     finally:

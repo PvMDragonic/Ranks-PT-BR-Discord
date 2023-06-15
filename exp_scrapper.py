@@ -9,9 +9,8 @@ import backend
 def atualizar_exp(clans: list):
     estatisticas = []
 
-    for clan in clans:
+    for (clan_id, clan_nome) in clans:
         tentativas = 3
-        clan_id, clan_nome = clan
 
         while True:
             try:

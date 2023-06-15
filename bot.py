@@ -156,9 +156,9 @@ async def dxp(ctx, *args):
             return await ctx.message.channel.send(embed = embed)           
         
         ranks = sorted(
-            ranks[2], # Index 0 e 1 são as datas de início e fim, respectivamente.
+            ranks[-1],
             reverse = True, 
-            key = lambda x: x[6] # XP total
+            key = lambda x: x[1] # XP total
         )[0:10]
 
         embed = discord.Embed(
@@ -167,10 +167,10 @@ async def dxp(ctx, *args):
             color = 0x7a8ff5
         )
 
-        for index, clan in enumerate(ranks):
+        for index, (clan_nome, clan_exp) in enumerate(ranks):
             embed.add_field(
-                name = f'*{index + 1}º — {clan[0].replace("+", " ")}*', # Nome
-                value = f'{clan[6]:,}'.replace(",","."), # XP total
+                name = f'*{index + 1}º — {clan_nome.replace("+", " ")}*', # Nome
+                value = f'{clan_exp:,}'.replace(",","."), # XP total
                 inline = False
             )
         embed.add_field(name = "\n", value = "Para o rank completo, use **@Ranks PT-BR rank dxp**.", inline = False)
@@ -199,23 +199,17 @@ async def dxp(ctx, *args):
 async def rank(ctx, *args):
     async def enviar_mensagem():
         dados = sorted(
-            query[2], # Index 0 e 1 são as datas de início e fim, respectivamente.
+            query, 
             reverse = True, 
-            key = lambda x: x[6] # XP total
+            key = lambda x: x[1] # XP total
         )
 
         # txt
         if tipo == 1: 
-            dados = [
-                ' — '.join([
-                    f'{index + 1}º', 
-                    f'{clan[0]}'.replace("+", " "), # Nome
-                    f'{clan[6]:,}'.replace(",",".") # XP total
-                ]) 
-                for index, clan in enumerate(dados)
-            ]
-
-            dados = '\n'.join(dados)
+            dados = '\n'.join([
+                f'{index + 1}º — {nome.replace("+", " ")} — {exp_total:,}'.replace(",", ".")
+                for index, (nome, exp_total, *_) in enumerate(dados)
+            ])
 
             await ctx.channel.send(
                 content = f"{msg} {ctx.message.author.mention}", 
@@ -228,12 +222,8 @@ async def rank(ctx, *args):
         # json
         if tipo == 2:
             dados = [
-                [  
-                    index + 1, 
-                    clan[0], 
-                    clan[6]
-                ] 
-                for index, clan in enumerate(dados)
+                [index + 1, nome, exp_total] 
+                for index, (nome, exp_total, *_) in enumerate(dados)
             ]
 
             await ctx.channel.send(
@@ -254,12 +244,9 @@ async def rank(ctx, *args):
             saida = io.StringIO()
             csv_writer = csv.writer(saida)
 
-            for clan in dados:
+            for (nome, exp_total, *_) in dados:
                 csv_writer.writerow(
-                    [
-                        clan[0], 
-                        clan[6]
-                    ]
+                    [nome, exp_total]
                 )
 
             saida.seek(0)
@@ -279,9 +266,9 @@ async def rank(ctx, *args):
             worksheet1 = workbook.add_worksheet()
             worksheet1.set_column(0, 3, 20)
 
-            for index, clan in enumerate(dados):
-                worksheet1.write(f'A{index + 1}', clan[0])
-                worksheet1.write(f'B{index + 1}', clan[6])
+            for index, (nome, exp_total, *_) in enumerate(dados):
+                worksheet1.write(f'A{index + 1}', nome)
+                worksheet1.write(f'B{index + 1}', exp_total)
 
             workbook.close()
             saida.seek(0) 
@@ -296,16 +283,10 @@ async def rank(ctx, *args):
 
         # cru
         if tipo == 5:
-            dados = [
-                ' — '.join([
-                    f'{i + 1}º', 
-                    f'{dados[i][0]}'.replace("+", " "), 
-                    f'{dados[i][6]:,}'.replace(",",".")
-                ]) 
-                for i in range(50)
-            ]
-
-            dados = '\n'.join(dados)
+            dados = '\n'.join([
+                f'{index + 1}º — {nome.replace("+", " ")} — {exp_total:,}'.replace(",", ".")
+                for index, (nome, exp_total, *_) in enumerate(dados[:50])
+            ])
         
             await ctx.message.channel.send(f"{msg} {ctx.message.author.mention}\n\n{dados}")
 
@@ -354,17 +335,17 @@ async def rank(ctx, *args):
                 )
             except ValueError:
                 return await ctx.message.channel.send(
-                    f"Use o formato `DD MM AAAA` para representar a data. {ctx.message.author.mention}"
+                    f"Use o formato `DD MM AAAA` para repr esentar a data. {ctx.message.author.mention}"
                 )
         
         query = backend.resgatar_rank_geral(data)
+
         if not query:
             return await ctx.message.channel.send(
                 f"Não há registros do dia `{data.strftime('%d/%m/%Y')}`. {ctx.message.author.mention}"
             )
         
-        # Escolhendo um valor aleatório pra servir de referência pra data.
-        msg = f"Rank Geral `{query[0][1].strftime('%d/%m/%Y')}`"
+        msg = f"Rank Geral `{query[0][2].strftime('%d/%m/%Y')}`"
         return await enviar_mensagem()
     
     if "mensal" in args:
@@ -411,7 +392,8 @@ async def rank(ctx, *args):
                 f"Não há dados registrados para o período começando em `{inicio.strftime('%d/%m/%Y')}`! {ctx.message.author.mention}"
             )
 
-        msg = f"Rank Mensal de `{query[0]}` até `{query[1]}`"
+        data_inicio, data_fim, query = query
+        msg = f"Rank Mensal de `{data_inicio}` até `{data_fim}`"
         return await enviar_mensagem()
     
     if "dxp" in args:
@@ -431,6 +413,7 @@ async def rank(ctx, *args):
                 )
 
         query = backend.resgatar_rank_dxp(quantos_atras)
+
         if query == -1:
             return await ctx.message.channel.send(
                 f"Não há histórico de um DXP tão antigo assim para exibir; tente um número menor. {ctx.message.author.mention}"
@@ -444,7 +427,8 @@ async def rank(ctx, *args):
                 f"Não há dados suficientes para gerar um rank ainda; tente novamente dentro de 1 hora. {ctx.message.author.mention}"
             )
         
-        msg = f"Rank DXP de `{query[0]}` até `{query[1]}`"
+        data_inicio, data_fim, query = query
+        msg = f"Rank DXP de `{data_inicio}` até `{data_fim}`"
         return await enviar_mensagem()
     
     await ctx.message.channel.send(
@@ -535,14 +519,15 @@ async def adicionar(ctx, *args):
                 f"Você não tem permissão para acessar esse comando! {ctx.message.author.mention}"
             )
         
-        clan = args[1] 
+        nome = args[1]
+        clan = nomes_scrapper.verificar_clan_existe(nome)
 
-        if not nomes_scrapper.verificar_clan_existe(clan):
+        if not clan:
             return await ctx.message.channel.send(
                 f"O clã `{clan}` não foi encontrado no site oficial do RuneScape. {ctx.message.author.mention}"
             )
 
-        if not backend.adicionar_clan(clan):
+        if not backend.adicionar_clan(clan, nome):
             return await ctx.message.channel.send(
                 f"O clã `{clan}` já está registrado. {ctx.message.author.mention}"
             )
@@ -573,7 +558,7 @@ async def adicionar(ctx, *args):
                 f"O ID `{usuario}` já está registrado como moderador. {ctx.message.author.mention}"
             )
         
-        msg = f"[{datetime.datetime.now()}] {ctx.message.author.name} adicionou {clan} à moderação."
+        msg = f"[{datetime.datetime.now()}] {ctx.message.author.name} adicionou {usuario} à moderação."
         backend.adicionar_log(msg)
         print(msg)
 

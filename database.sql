@@ -2,9 +2,15 @@
 CREATE DATABASE clansptbr;
 
 CREATE TABLE clans (
+    id INT PRIMARY KEY, -- clanId da Jagex.
+    arquivado BOOLEAN
+);
+
+CREATE TABLE nomes (
     id SERIAL PRIMARY KEY,
-    arquivado BOOLEAN,
-    nome VARCHAR
+    id_clan INT REFERENCES clans (id),
+    nome VARCHAR,
+    data_alterado DATE
 );
 
 CREATE TABLE dxp (
