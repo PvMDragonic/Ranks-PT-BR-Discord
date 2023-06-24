@@ -1,7 +1,6 @@
 from multiprocessing import Process
 from threading import Thread
 from datetime import datetime
-from typing import Union
 from lxml import html
 import fasttext
 import requests
@@ -22,7 +21,7 @@ def buscar_uid(nome: str) -> str:
     conteudo = html.fromstring(requisicao)
     return conteudo.xpath('.//input[@name="clanId"]/@value')[0]
 
-def verificar_clan_existe(nome: str) -> Union[str, bool]:
+def verificar_clan_existe(nome: str) -> str | bool:
     try:
         pagina_clan = f'https://secure.runescape.com/m=clan-home/l=3/a=869/clan/{nome}'
         requisicao = requests.get(pagina_clan).content
@@ -35,7 +34,7 @@ def verificar_clan_existe(nome: str) -> Union[str, bool]:
     except requests.exceptions.RequestException:
         return False
 
-def validar_ptbr(nomes):
+def validar_ptbr(nomes: str) -> None:
     MODEL = fasttext.load_model('lid.176.ftz')
     ptbr = []
 
@@ -75,7 +74,7 @@ def validar_ptbr(nomes):
 
     backend.adicionar_clans(ptbr)
 
-def encontrar_clans(lista):
+def encontrar_clans(lista: list) -> None:
     nomes = []
 
     for num in lista:
@@ -93,13 +92,13 @@ def encontrar_clans(lista):
 
     validar_ptbr(nomes)
 
-def processo(nomes):
+def processo(nomes: list) -> None:
     nomes = [nomes[i::THREADS] for i in range(THREADS)]
 
     for i in range(THREADS):
         Thread(target = encontrar_clans, args = (nomes[i], )).start()
 
-def buscar_clans():
+def buscar_clans() -> None:
     pagina = html.fromstring(requests.get('https://secure.runescape.com/m=clan-hiscores/l=3/a=869/ranking').content)
     quantia_paginas = pagina.xpath('.//div[@class="paging"]')
     quantia_paginas = quantia_paginas[0].text_content().split("\n")

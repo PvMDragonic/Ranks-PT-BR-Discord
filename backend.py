@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta, date
 import psycopg2
 
-class Conexao(object):    
+class Conexao(object):
+    """Classe para conexão com o banco de dados."""  
+
     def __init__(self) -> None:
         self._db = psycopg2.connect(
             host = 'localhost', 
@@ -10,10 +12,22 @@ class Conexao(object):
             password = 123456
         )
 
-    def manipular(self, sql) -> None:
+    def manipular(self, query: str) -> bool:
+        """
+        Método para alterar ou inserir dados no banco.
+        
+        Parâmetros:
+            query: str
+                A query SQL.
+
+        Retorna:
+            bool: 
+                Status da operação realizada.
+        """
+
         try:
             cur = self._db.cursor()
-            cur.execute(sql)
+            cur.execute(query)
             cur.close()
             self._db.commit()
             return True
@@ -23,10 +37,24 @@ class Conexao(object):
             print(msg)
             return False
 
-    def consultar(self, sql) -> list[tuple]:
+    def consultar(self, query: str) -> list[tuple] | None:
+        """
+        Método para consultar o banco de dados.
+        
+        Parâmetros:
+            query: str
+                A query SQL.
+
+        Retorna:
+            list: 
+                [(...), ...]
+            None: 
+                Caso a query não seja válida.
+        """
+
         try:
             cur = self._db.cursor()
-            cur.execute(sql)
+            cur.execute(query)
             return cur.fetchall()
         except Exception as e:
             msg = f"[{datetime.now()}] Erro durante consulta: {e}"
@@ -38,6 +66,14 @@ class Conexao(object):
         self._db.close()
 
 def resgatar_clans() -> list:
+    """
+    Retorna todos os clãs com seus nomes mais recentes.
+    
+    Retorna:
+        list: 
+            [(id_clan, nome), ...]
+    """
+
     try:
         db = Conexao()
         return db.consultar(
@@ -48,7 +84,19 @@ def resgatar_clans() -> list:
     finally:
         db.fechar()
 
-def resgatar_rank_geral(data: date) -> list[str]:
+def resgatar_rank_geral(data: date = None) -> list[tuple[str]]:
+    """
+    Retorna ranking com todos os clãs que não estejam arquivados.
+
+    Parâmetros:
+        data (opcional): date
+            Data para pesquisar os registros.
+
+    Retorna: 
+        list: 
+            [(nome, exp_total, data_hora), ...]
+    """
+
     try:
         db = Conexao()
 
@@ -81,7 +129,23 @@ def resgatar_rank_geral(data: date) -> list[str]:
     finally:
         db.fechar()
 
-def resgatar_rank_mensal(data_inicio: date, data_fim: date):
+def resgatar_rank_mensal(data_inicio: date = None, data_fim: date = None) -> list[tuple[str]] | int:
+    """
+    Retorna ranking dos últimos 30 dias com todos os clãs que não estejam arquivados.
+
+    Parâmetros:
+        data_inicio (opcional): date
+            Ponto inicial para o ranking;
+        data_fim (opcional): date
+            Ponto limite para o ranking.
+
+    Retorna: 
+        list: 
+            [data_inicio, data_fim, [(nome, exp_total), ...]]
+        int: 
+            Código de erro caso dê problema com alguma data.
+    """
+
     try:
         db = Conexao()
         
@@ -190,7 +254,21 @@ def resgatar_rank_mensal(data_inicio: date, data_fim: date):
     finally:
         db.fechar()
 
-def resgatar_rank_dxp(quantos_atras: int) -> list:
+def resgatar_rank_dxp(quantos_atras: int) -> list[tuple[str]] | int:
+    """
+    Retorna ranking dos últimos 30 dias com todos os clãs que não estejam arquivados.
+
+    Parâmetros:
+        quantos_atras (opcional): int
+            Número de quantos DXPs atrás deve ser o DXP escolhido para o ranking.
+
+    Retorna: 
+        list: 
+            [data_inicio, data_fim, [(nome, exp_total), ...]]
+        int: 
+            Código de erro caso dê problema com alguma data.
+    """
+    
     try:
         db = Conexao()
 
@@ -271,7 +349,15 @@ def resgatar_rank_dxp(quantos_atras: int) -> list:
     finally:
         db.fechar()
 
-def resgatar_data_dxp() -> list[datetime]:
+def resgatar_data_dxp() -> tuple[str]:
+    """
+    Retorna as informações do DXP que foi registrado por último.
+
+    Retorna: 
+        tuple: 
+            (id, data_inicio, data_fim)
+    """
+
     try:
         db = Conexao()
         datahora = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC LIMIT 1")[0]
@@ -280,6 +366,20 @@ def resgatar_data_dxp() -> list[datetime]:
         db.fechar()
 
 def verificar_dxp(data_comeco: datetime, data_fim: datetime) -> bool:
+    """
+    Verifica se há um DXP registrado para o período entre duas datas.
+
+    Parâmetros:
+        data_comeco: datetime
+            Data de início do DXP;
+        data_fim: datetime
+            Data de encerramento do DXP.
+
+    Retorna: 
+        bool: 
+            Verdadeiro caso exista; Falso caso não.
+    """
+
     try:
         db = Conexao()
         return db.consultar(
@@ -289,6 +389,14 @@ def verificar_dxp(data_comeco: datetime, data_fim: datetime) -> bool:
         db.fechar()
 
 def dxp_acontecendo() -> bool:
+    """
+    Verifica se há um DXP acontecendo.
+
+    Retorna:
+        bool:
+            Verdadeiro caso esteja acontecendo; Falso caso não.
+    """
+
     try:
         db = Conexao()
         datas_dxp = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")[0]
@@ -299,6 +407,14 @@ def dxp_acontecendo() -> bool:
         db.fechar()
 
 def dxp_restante() -> str:
+    """
+    Retorna o tempo restante até o DXP mais recente acabar.
+
+    Retorna:
+        str:
+            String já formatada com o tempo restante.
+    """
+
     try:
         db = Conexao()
         fim = db.consultar("SELECT data_fim FROM dxp ORDER BY data_comeco DESC LIMIT 1")[0][0]
@@ -316,13 +432,33 @@ def dxp_restante() -> str:
         db.fechar()
 
 def adicionar_dxp(data_comeco: datetime, data_fim: datetime) -> None:
+    """
+    Adiciona um novo registro de DXP no banco de dados.
+
+    Parâmetros:
+        data_comeco: datetime
+            Data de início do DXP.
+        data_fim: datetime
+            Data de encerramento do DXP.
+    """
+
     try:
         db = Conexao()
         return db.manipular(f"INSERT INTO dxp (data_comeco, data_fim) VALUES ('{data_comeco}', '{data_fim}')")
     finally:
         db.fechar()
 
-def deletar_dxp() -> list[datetime]:
+def deletar_dxp() -> list[datetime] | None:
+    """
+    Remove e retorna os registros do último DXP registrado.
+
+    Retorna:
+        list:
+            [data_comeco, data_fim]
+        None:
+            Caso não haja registro algum para ser deletado.
+    """
+
     try:
         db = Conexao()
         query = db.consultar("SELECT * FROM dxp ORDER BY id DESC LIMIT 1")
@@ -337,6 +473,14 @@ def deletar_dxp() -> list[datetime]:
         db.fechar()
 
 def adicionar_estatisticas(lista: list[str]) -> None:
+    """
+    Adiciona novos registros de XP para os clãs no banco de dados.
+
+    Parâmetros:
+        lista: list
+            [[id, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total], ...]
+    """
+
     db = Conexao()
     for (id, data_hora, membros, nv_fort, nv_total, nv_cb_total, exp_total) in lista:
         db.manipular(
@@ -345,7 +489,15 @@ def adicionar_estatisticas(lista: list[str]) -> None:
         )
     db.fechar()
 
-def adicionar_clans(clans: list[list[str]]) -> None:
+def adicionar_clans(clans: list[str]) -> None:
+    """
+    Adiciona novos clãs ao banco de dados.
+
+    Parâmetros:
+        clans: list
+            [[id, nome], ...]
+    """
+
     db = Conexao()
     for clan in clans:
         id, nome = clan
@@ -360,6 +512,20 @@ def adicionar_clans(clans: list[list[str]]) -> None:
     db.fechar()
 
 def adicionar_clan(id: int, nome: str) -> bool:
+    """
+    Adiciona um clã novo ao banco de dados, individualmente.
+
+    Parâmetros:
+        id: int
+            Atributo 'clanId' retirado da página do clã no site do RuneScape.
+        nome: str
+            Nome do clã.
+
+    Retorna:
+        bool:
+            Verdadeiro caso tenha sido registrado; Falso caso não.
+    """
+
     try:
         db = Conexao()
 
@@ -379,6 +545,18 @@ def adicionar_clan(id: int, nome: str) -> bool:
         db.fechar()
 
 def remover_clan(clan: str) -> bool:
+    """
+    Arquiva um clã registrado no banco de dados, individualmente.
+
+    Parâmetros:
+        clan: str
+            Nome do clã a ser removido/arquivado.
+
+    Retorna:
+        bool:
+            Verdadeiro caso o clã seja encontrado e arquivado; Falso caso não.
+    """
+
     try:
         db = Conexao()
         query = db.consultar(f"SELECT id_clan FROM nomes WHERE nome = '{clan}'")
@@ -391,10 +569,28 @@ def remover_clan(clan: str) -> bool:
         db.fechar()
 
 def adicionar_log(texto: str) -> None:
+    """
+    Adiciona uma nova linha de registro no arquivo de log.
+
+    Parâmetros:
+        texto: str
+            String a ser salva no log.
+    """
+
     with open('log.txt', 'a') as arqv:
         arqv.writelines(f'{texto}\n')
 
 def possui_nv_acesso(nv_requerido: int, id_usuario: int) -> bool:
+    """
+    Verifica se um id de usuário de Discord tem nível de acesso.
+
+    Parâmetros:
+        nv_requerido: int
+            Qual nível é requerido para a ação.
+        id_usuario: int
+            ID do Discord do usuário em questão.
+    """
+
     try:
         db = Conexao()
         nv_acesso = db.consultar(f"SELECT nv_acesso FROM admins WHERE id_discord = {id_usuario};")
@@ -408,6 +604,18 @@ def possui_nv_acesso(nv_requerido: int, id_usuario: int) -> bool:
         db.fechar()
 
 def adicionar_moderador(id_usuario: int) -> bool:
+    """
+    Adiciona um novo ID de Discord ao banco de dados como nível 1 de acesso.
+
+    Parâmetros:
+        id_usuario: int
+            ID do Discord do usuário em questão.
+
+    Retorna:
+        bool:
+            Verdadeiro se o registro acontecer; Falso caso contrário.
+    """
+
     try:
         db = Conexao()
         
@@ -419,6 +627,18 @@ def adicionar_moderador(id_usuario: int) -> bool:
         db.fechar()
 
 def remover_moderador(id_usuario: int) -> bool:
+    """
+    Remove um ID de Discord da lista de moderadores do banco de dados.
+
+    Parâmetros:
+        id_usuario: int
+            ID do Discord do usuário em questão.
+
+    Retorna:
+        bool:
+            Verdadeiro se for removido; Falso caso contrário.
+    """
+
     try:
         db = Conexao()
         

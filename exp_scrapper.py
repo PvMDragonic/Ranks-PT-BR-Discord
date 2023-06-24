@@ -6,7 +6,7 @@ import time
 
 import backend
 
-def atualizar_exp(clans: list):
+def atualizar_exp(clans: list) -> None:
     estatisticas = []
 
     for (clan_id, clan_nome) in clans:
@@ -53,7 +53,7 @@ def atualizar_exp(clans: list):
 
     backend.adicionar_estatisticas(estatisticas)
 
-def buscar_clans():
+def buscar_clans() -> None:
     PARTES = 3
 
     clans = backend.resgatar_clans()
