@@ -8,7 +8,7 @@ Os dados de todos os clãs são extraídos do código-fonte do site oficial do R
 Para fazer o Ranks PT-BR (Discord) funcionar, os seguintes requisitos são necessários:
 - **Back-end**
     - PostgreSQL 14.4 (ou superior);
-    - Python 3.9 (ou superior);
+    - Python 3.10 (ou superior);
         - [discord.py](https://pypi.org/project/discord.py/) — Wrapper da API do Discord para Python;
         - [fasttext](https://pypi.org/project/fasttext/) — Wrapper da API feita pelo Facebook para reconhecimento de linguas;
         - [psycopg2](https://pypi.org/project/psycopg/) — Adaptador Postgres para linguagem Python;
