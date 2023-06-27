@@ -65,9 +65,7 @@ def validar_ptbr(nomes: str) -> None:
             except (requests.exceptions.RequestException, IndexError) as erro:
                 tentativas -= tentativas
                 if tentativas == 0:
-                    msg_log = f"[{datetime.now()}] Erro na coleta do clã {nome}: {erro}"
-                    backend.adicionar_log(msg_log)
-                    print(msg_log)
+                    backend.adicionar_log(f"[{datetime.now()}] Erro na coleta do clã {nome}: {erro}")
                     break
 
                 time.sleep(60)
@@ -109,9 +107,9 @@ def buscar_clans() -> None:
     quantia_paginas = [num for num in range(quantia_paginas)]
     quantia_paginas = [quantia_paginas[i::PROCESSOS] for i in range(PROCESSOS)]
 
-    msg = f"[{datetime.now()}] Iniciando scrapping de clãs..."
-    backend.adicionar_log(msg)
-    print(msg)
+    backend.adicionar_log(
+        f"[{datetime.now()}] Iniciando scrapping de clãs..."
+    )
 
     processos = [
         Process(target = processo, args = (quantia_paginas[i], )) for i in range(PROCESSOS)
@@ -123,6 +121,6 @@ def buscar_clans() -> None:
     for p in processos:
        p.join()
 
-    msg = f"[{datetime.now()}] Scrapping de clãs finalizado."
-    backend.adicionar_log(msg)
-    print(msg)
+    backend.adicionar_log(
+        f"[{datetime.now()}] Scrapping de clãs finalizado."
+    )

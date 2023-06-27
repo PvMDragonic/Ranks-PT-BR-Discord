@@ -482,9 +482,9 @@ async def criar(ctx, *args):
             f"Double XP para as datas entre `{data_comeco.strftime('%d/%m/%Y')}` e `{data_fim.strftime('%d/%m/%Y')}` registrado com sucesso {ctx.message.author.mention}!"
         )
 
-        msg = f"[{datetime.datetime.now()}] {ctx.message.author} registrou novo DXP de {data_comeco.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}."
-        backend.adicionar_log(msg)
-        print(msg)
+        backend.adicionar_log(
+            f"[{datetime.datetime.now()}] {ctx.message.author} registrou novo DXP de {data_comeco.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}."
+        )
 
 @bot.command()
 async def deletar(ctx, *args):
@@ -506,10 +506,10 @@ async def deletar(ctx, *args):
     await ctx.message.channel.send(
             f"O DXP de {datas[0].strftime('%d/%m/%Y')} até {datas[1].strftime('%d/%m/%Y')} foi deletado. {ctx.message.author.mention}"
         )
-    
-    msg = f"[{datetime.datetime.now()}] {ctx.message.author} deletou o DXP de {datas[0].strftime('%d/%m/%Y')} até {datas[1].strftime('%d/%m/%Y')}."
-    backend.adicionar_log(msg)
-    print(msg)
+
+    backend.adicionar_log(
+        f"[{datetime.datetime.now()}] {ctx.message.author} deletou o DXP de {datas[0].strftime('%d/%m/%Y')} até {datas[1].strftime('%d/%m/%Y')}."
+    )
 
 @bot.command()
 async def adicionar(ctx, *args):
@@ -532,9 +532,9 @@ async def adicionar(ctx, *args):
                 f"O clã `{clan}` já está registrado. {ctx.message.author.mention}"
             )
         
-        msg = f"[{datetime.datetime.now()}] {ctx.message.author.name} adicionou o clã {clan}."
-        backend.adicionar_log(msg)
-        print(msg)
+        backend.adicionar_log(
+            f"[{datetime.datetime.now()}] {ctx.message.author.name} adicionou o clã {clan}."
+        )
 
         return await ctx.message.channel.send(
             f"O clã `{clan}` foi registrado com sucesso. {ctx.message.author.mention}"
@@ -558,9 +558,9 @@ async def adicionar(ctx, *args):
                 f"O ID `{usuario}` já está registrado como moderador. {ctx.message.author.mention}"
             )
         
-        msg = f"[{datetime.datetime.now()}] {ctx.message.author.name} adicionou {usuario} à moderação."
-        backend.adicionar_log(msg)
-        print(msg)
+        backend.adicionar_log(
+            f"[{datetime.datetime.now()}] {ctx.message.author.name} adicionou {usuario} à moderação."
+        )
 
         await ctx.message.channel.send(
             f"O ID `{usuario}` foi registrado como moderador com sucesso. {ctx.message.author.mention}"
@@ -581,9 +581,9 @@ async def remover(ctx, *args):
                 f"O clã `{clan}` não está registrado. {ctx.message.author.mention}"
             )
         
-        msg = f"[{datetime.datetime.now()}] {ctx.message.author.name} removeu o clã {clan}."
-        backend.adicionar_log(msg)
-        print(msg)
+        backend.adicionar_log(
+            f"[{datetime.datetime.now()}] {ctx.message.author.name} removeu o clã {clan}."
+        )
 
         return await ctx.message.channel.send(
             f"O clã `{clan}` foi removido com sucesso. {ctx.message.author.mention}"
@@ -607,9 +607,9 @@ async def remover(ctx, *args):
                 f"O ID `{usuario}` não está registrado como moderador. {ctx.message.author.mention}"
             )
         
-        msg = f"[{datetime.datetime.now()}] {ctx.message.author.name} removeu {usuario} da moderação."
-        backend.adicionar_log(msg)
-        print(msg)
+        backend.adicionar_log(
+            f"[{datetime.datetime.now()}] {ctx.message.author.name} removeu {usuario} da moderação."
+        )
 
         await ctx.message.channel.send(
             f"O ID `{usuario}` foi removido da moderação com sucesso. {ctx.message.author.mention}"
@@ -646,9 +646,9 @@ async def on_message(message):
         
         await bot.process_commands(message)
     except discord.errors.Forbidden as e:
-        msg = f"[{datetime.datetime.now()}] Erro de permissão em {message.guild.name}: {e}"
-        backend.adicionar_log(msg)
-        print(msg)
+        backend.adicionar_log(
+            f"[{datetime.datetime.now()}] Erro de permissão em {message.guild.name}: {e}"
+        )
 
 if __name__ == '__main__':
     threading.Thread(target = loop_diario).start()

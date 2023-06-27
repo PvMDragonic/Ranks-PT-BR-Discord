@@ -34,9 +34,7 @@ class Conexao(object):
             self._db.commit()
             return True
         except Exception as e:
-            msg = f"[{datetime.now()}] Erro durante manipulação: {e}"
-            adicionar_log(msg)
-            print(msg)
+            adicionar_log(f"[{datetime.now()}] Erro durante manipulação: {e}")
             return False
 
     def consultar(self, query: str, *args: tuple) -> list[tuple] | None:
@@ -61,9 +59,7 @@ class Conexao(object):
             cur.execute(query, args)
             return cur.fetchall()
         except Exception as e:
-            msg = f"[{datetime.now()}] Erro durante consulta: {e}"
-            adicionar_log(msg)
-            print(msg)
+            adicionar_log(f"[{datetime.now()}] Erro durante consulta: {e}")
             return None
 
     def fechar(self):
@@ -583,17 +579,18 @@ def remover_clan(clan: str) -> bool:
     finally:
         db.fechar()
 
-def adicionar_log(texto: str) -> None:
+def adicionar_log(mensagem: str) -> None:
     """
-    Adiciona uma nova linha de registro no arquivo de log.
+    Adiciona um novo registro no arquivo de log e depois exibe no terminal.
 
     Parâmetros:
-        texto: str
+        mensagem: str
             String a ser salva no log.
     """
 
     with open('log.txt', 'a') as arqv:
-        arqv.writelines(f'{texto}\n')
+        arqv.writelines(f'{mensagem}\n')
+        print(mensagem)
 
 def possui_nv_acesso(nv_requerido: int, id_usuario: int) -> bool:
     """

@@ -44,9 +44,7 @@ def atualizar_exp(clans: list) -> None:
             except (requests.exceptions.RequestException, IndexError) as erro:
                 tentativas -= tentativas
                 if tentativas == 0:
-                    msg_log = f"[{datetime.now()}] Erro na coleta de XP de {clan_nome}: {erro}"
-                    backend.adicionar_log(msg_log)
-                    print(msg_log)
+                    backend.adicionar_log(f"[{datetime.now()}] Erro na coleta de XP de {clan_nome}: {erro}")
                     break
 
                 time.sleep(60)
@@ -59,9 +57,9 @@ def buscar_clans() -> None:
     clans = backend.resgatar_clans()
     clans = [clans[i::PARTES] for i in range(PARTES)]
 
-    msg = f"[{datetime.now()}] Iniciando scrapping de EXP..."
-    backend.adicionar_log(msg)
-    print(msg)
+    backend.adicionar_log(
+        f"[{datetime.now()}] Iniciando scrapping de EXP..."
+    )
 
     threads = [
         Thread(target = atualizar_exp, args = (clans[i], )) for i in range(PARTES)
@@ -73,6 +71,6 @@ def buscar_clans() -> None:
     for t in threads:
         t.join()
 
-    msg = f"[{datetime.now()}] Scrapping de EXP finalizado."
-    backend.adicionar_log(msg)
-    print(msg)
+    backend.adicionar_log(
+        f"[{datetime.now()}] Scrapping de EXP finalizado."
+    )
