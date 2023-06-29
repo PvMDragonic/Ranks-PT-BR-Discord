@@ -555,17 +555,19 @@ async def adicionar(ctx, *args):
                 f"Você não inseriu um ID de usuário de Discord válido! {ctx.message.author.mention}"
             )
 
+        nome = bot.get_user(usuario).display_name
+
         if not backend.adicionar_moderador(usuario):
             return await ctx.message.channel.send(
-                f"O ID `{usuario}` já está registrado como moderador. {ctx.message.author.mention}"
+                f"`{nome}` já faz parte da moderação. {ctx.message.author.mention}"
             )
         
         backend.adicionar_log(
-            f"[{datetime.datetime.now()}] {ctx.message.author.name} adicionou {usuario} à moderação."
+            f"[{datetime.datetime.now()}] {ctx.message.author.name} adicionou {nome} à moderação."
         )
 
         await ctx.message.channel.send(
-            f"O ID `{usuario}` foi registrado como moderador com sucesso. {ctx.message.author.mention}"
+            f"`{nome}` agora faz parte da moderação! {ctx.message.author.mention}"
         ) 
 
 @bot.command()
@@ -605,18 +607,20 @@ async def remover(ctx, *args):
                 f"Você não inseriu um ID de usuário de Discord válido! {ctx.message.author.mention}"
             )
 
+        nome = bot.get_user(usuario).display_name
+
         if not backend.remover_moderador(usuario):
             return await ctx.message.channel.send(
-                f"O ID `{usuario}` não está registrado como moderador. {ctx.message.author.mention}"
+                f"`{nome}` não faz parte da moderação. {ctx.message.author.mention}"
             )
         
         backend.adicionar_log(
-            f"[{datetime.datetime.now()}] {ctx.message.author.name} removeu {usuario} da moderação."
+            f"[{datetime.datetime.now()}] {ctx.message.author.name} removeu {nome} da moderação."
         )
 
         await ctx.message.channel.send(
-            f"O ID `{usuario}` foi removido da moderação com sucesso. {ctx.message.author.mention}"
-        ) 
+            f"`Agora {nome}` não faz mais parte da moderação. {ctx.message.author.mention}"
+        )
 
 @bot.event
 async def on_ready():
