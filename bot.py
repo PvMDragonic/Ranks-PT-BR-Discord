@@ -519,25 +519,27 @@ async def adicionar(ctx, *args):
                 f"Você não tem permissão para acessar esse comando! {ctx.message.author.mention}"
             )
         
-        nome = args[1]
-        clan = nomes_scrapper.verificar_clan_existe(nome)
+        # Remove 'clan' que vem junto no *args.
+        nome = "+".join(list(args)[1:])
+        clan_id = nomes_scrapper.verificar_clan_existe(nome)
+        nome = nome.replace("+", " ")
 
-        if not clan:
+        if not clan_id:
             return await ctx.message.channel.send(
-                f"O clã `{clan}` não foi encontrado no site oficial do RuneScape. {ctx.message.author.mention}"
+                f"O clã `{nome}` não foi encontrado no site oficial do RuneScape. {ctx.message.author.mention}"
             )
 
-        if not backend.adicionar_clan(clan, nome):
+        if not backend.adicionar_clan(clan_id, nome):
             return await ctx.message.channel.send(
-                f"O clã `{clan}` já está registrado. {ctx.message.author.mention}"
+                f"O clã `{nome}` já está registrado. {ctx.message.author.mention}"
             )
         
         backend.adicionar_log(
-            f"[{datetime.datetime.now()}] {ctx.message.author.name} adicionou o clã {clan}."
+            f"[{datetime.datetime.now()}] {ctx.message.author.name} adicionou o clã {nome}."
         )
 
         return await ctx.message.channel.send(
-            f"O clã `{clan}` foi registrado com sucesso. {ctx.message.author.mention}"
+            f"O clã `{nome}` foi registrado com sucesso. {ctx.message.author.mention}"
         ) 
         
     if "mod" in args:
@@ -574,19 +576,20 @@ async def remover(ctx, *args):
                 f"Você não tem permissão para acessar esse comando! {ctx.message.author.mention}"
             )
         
-        clan = args[1] 
+        clan = "+".join(list(args))
+        nome = clan.replace("+", " ") 
 
         if not backend.remover_clan(clan):
             return await ctx.message.channel.send(
-                f"O clã `{clan}` não está registrado. {ctx.message.author.mention}"
+                f"O clã `{nome}` não está registrado. {ctx.message.author.mention}"
             )
         
         backend.adicionar_log(
-            f"[{datetime.datetime.now()}] {ctx.message.author.name} removeu o clã {clan}."
+            f"[{datetime.datetime.now()}] {ctx.message.author.name} removeu o clã {nome}."
         )
 
         return await ctx.message.channel.send(
-            f"O clã `{clan}` foi removido com sucesso. {ctx.message.author.mention}"
+            f"O clã `{nome}` foi removido com sucesso. {ctx.message.author.mention}"
         ) 
         
     if "mod" in args:
