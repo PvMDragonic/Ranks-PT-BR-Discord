@@ -1,10 +1,10 @@
 from discord.ext.commands import CommandNotFound
 from discord.ext import commands
+from datetime import timedelta, datetime, date, time
+from time import sleep
 import xlsxwriter
 import threading
-import datetime
 import discord
-import time
 import json
 import csv
 import io
@@ -21,27 +21,43 @@ intents.message_content = True
 bot = commands.Bot(command_prefix = commands.when_mentioned, intents = intents)    
 
 def loop_diario():
-    NOVE = datetime.time(9)
-    NOVE_MEIA = datetime.time(9, 30)
+    def tempo_para_nove_horas(prox_dia = True):
+        agr = datetime.now()
+        nove_horas = agr.replace(hour = 9, minute = 5)
+        
+        if prox_dia:
+            nove_horas = nove_horas + timedelta(days = 1)
+        
+        diferenca = nove_horas - agr
+        return diferenca.total_seconds()
 
     while True:
-        time.sleep(300)
-        
-        # Refresh de hora em hora durante DXP.
-        if backend.dxp_acontecendo():
-            time.sleep(3300)
-            exp_scrapper.buscar_clans()
+        agora = datetime.now()
 
-        # Calibra automaticamente pra sempre rodar logo após as 9 da manhã.
-        elif NOVE <= datetime.datetime.now().time() <= NOVE_MEIA:
+        if backend.dxp_acontecendo():
+            timestamp_inicio = agora.timestamp()
             exp_scrapper.buscar_clans()
-            time.sleep(84000)
+            timestamp_final = datetime.now().timestamp()
+            sleep(3600 - (timestamp_final - timestamp_inicio))
+            continue
+
+        # Bot foi iniciado antes das nove da manhã.
+        if agora.time() <= time(9, 5):
+            sleep(tempo_para_nove_horas(prox_dia = False))
+            continue
+
+        ultima_coleta = backend.resgatar_rank_geral()[0][2].date()
+
+        # Verifica se já houve uma coleta no dia.
+        if agora.date() > ultima_coleta:
+            exp_scrapper.buscar_clans()
+            sleep(tempo_para_nove_horas())
 
 def loop_mensal():
     while True:
-        time.sleep(84600)
+        sleep(84600)
 
-        if datetime.date.today().day == 1:
+        if date.today().day == 1:
             nomes_scrapper.buscar_clans()
 
 async def lista_comandos(message):
@@ -178,7 +194,7 @@ async def dxp(ctx, *args):
         return await ctx.message.channel.send(embed = embed)
 
     # Double ainda não passou.
-    if inicio_dxp > datetime.datetime.now():
+    if inicio_dxp > datetime.now():
         embed = discord.Embed(
             title = f"O próximo EXP em Dobro se aproxima!", 
             description = f"O DXP começa em __{inicio_dxp.strftime('%d/%m/%Y')}__ às __09:00__, horário de Brasília (12:00 do jogo).", 
@@ -328,7 +344,7 @@ async def rank(ctx, *args):
         
         if len(args) == 4:
             try:
-                data = datetime.date(
+                data = date(
                     year = int(args[3]), 
                     month = int(args[2]), 
                     day = int(args[1])
@@ -358,12 +374,12 @@ async def rank(ctx, *args):
         
         if len(args) == 7:
             try:
-                inicio = datetime.date(
+                inicio = date(
                     year = int(args[3]), 
                     month = int(args[2]), 
                     day = int(args[1])
                 )
-                fim = datetime.date(
+                fim = date(
                     year = int(args[6]), 
                     month = int(args[5]), 
                     day = int(args[4])
@@ -454,14 +470,14 @@ async def criar(ctx, *args):
         )
     
     try:
-        data_comeco = datetime.datetime(
+        data_comeco = datetime(
             int(comeco_ano), 
             int(comeco_mes), 
             int(comeco_dia),
             9, 0, 0
         )
 
-        data_fim = datetime.datetime(
+        data_fim = datetime(
             int(fim_ano), 
             int(fim_mes), 
             int(fim_dia),
@@ -483,7 +499,7 @@ async def criar(ctx, *args):
         )
 
         backend.adicionar_log(
-            f"[{datetime.datetime.now()}] {ctx.message.author} registrou novo DXP de {data_comeco.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}."
+            f"[{datetime.now()}] {ctx.message.author} registrou novo DXP de {data_comeco.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}."
         )
 
 @bot.command()
@@ -508,7 +524,7 @@ async def deletar(ctx, *args):
         )
 
     backend.adicionar_log(
-        f"[{datetime.datetime.now()}] {ctx.message.author} deletou o DXP de {datas[0].strftime('%d/%m/%Y')} até {datas[1].strftime('%d/%m/%Y')}."
+        f"[{datetime.now()}] {ctx.message.author} deletou o DXP de {datas[0].strftime('%d/%m/%Y')} até {datas[1].strftime('%d/%m/%Y')}."
     )
 
 @bot.command()
@@ -535,7 +551,7 @@ async def adicionar(ctx, *args):
             )
         
         backend.adicionar_log(
-            f"[{datetime.datetime.now()}] {ctx.message.author.name} adicionou o clã {nome}."
+            f"[{datetime.now()}] {ctx.message.author.name} adicionou o clã {nome}."
         )
 
         return await ctx.message.channel.send(
@@ -563,7 +579,7 @@ async def adicionar(ctx, *args):
             )
         
         backend.adicionar_log(
-            f"[{datetime.datetime.now()}] {ctx.message.author.name} adicionou {nome} à moderação."
+            f"[{datetime.now()}] {ctx.message.author.name} adicionou {nome} à moderação."
         )
 
         await ctx.message.channel.send(
@@ -587,7 +603,7 @@ async def remover(ctx, *args):
             )
         
         backend.adicionar_log(
-            f"[{datetime.datetime.now()}] {ctx.message.author.name} removeu o clã {nome}."
+            f"[{datetime.now()}] {ctx.message.author.name} removeu o clã {nome}."
         )
 
         return await ctx.message.channel.send(
@@ -615,7 +631,7 @@ async def remover(ctx, *args):
             )
         
         backend.adicionar_log(
-            f"[{datetime.datetime.now()}] {ctx.message.author.name} removeu {nome} da moderação."
+            f"[{datetime.now()}] {ctx.message.author.name} removeu {nome} da moderação."
         )
 
         await ctx.message.channel.send(
@@ -654,7 +670,7 @@ async def on_message(message):
         await bot.process_commands(message)
     except discord.errors.Forbidden as e:
         backend.adicionar_log(
-            f"[{datetime.datetime.now()}] Erro de permissão em {message.guild.name}: {e}"
+            f"[{datetime.now()}] Erro de permissão em {message.guild.name}: {e}"
         )
 
 if __name__ == '__main__':
