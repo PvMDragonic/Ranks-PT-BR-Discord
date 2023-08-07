@@ -5,6 +5,7 @@ from time import sleep
 import xlsxwriter
 import threading
 import discord
+import asyncio
 import json
 import csv
 import io
@@ -20,6 +21,9 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix = commands.when_mentioned, intents = intents)    
 
+async def msg_padrao():
+    await bot.change_presence(activity = discord.Game(name = 'Marca o bot p/ cmd'))
+
 def loop_diario():
     def tempo_para_nove_horas(prox_dia = True):
         agr = datetime.now()
@@ -30,35 +34,52 @@ def loop_diario():
         
         diferenca = nove_horas - agr
         return diferenca.total_seconds()
+    
+    async def msg_coletando_exp():
+        await bot.change_presence(activity = discord.Game(name = 'Coletando EXP...'))
 
-    while True:
-        agora = datetime.now()
+    async def asincrono():
+        while True:
+            agora = datetime.now()
 
-        if backend.dxp_acontecendo():
-            timestamp_inicio = agora.timestamp()
-            exp_scrapper.buscar_clans()
-            timestamp_final = datetime.now().timestamp()
-            sleep(3600 - (timestamp_final - timestamp_inicio))
-            continue
+            if backend.dxp_acontecendo():
+                await msg_coletando_exp()
+                exp_scrapper.buscar_clans()
+                await msg_padrao()
+                
+                sleep(3600 - (datetime.now().timestamp() - agora.timestamp()))
+                continue
 
-        # Bot foi iniciado antes das nove da manhã.
-        if agora.time() <= time(9, 5):
-            sleep(tempo_para_nove_horas(prox_dia = False))
-            continue
+            # Bot foi iniciado antes das nove da manhã.
+            if agora.time() <= time(9, 5):
+                sleep(tempo_para_nove_horas(prox_dia = False))
+                continue
 
-        ultima_coleta = backend.resgatar_rank_geral()[0][2].date()
+            ultima_coleta = backend.resgatar_rank_geral()[0][2].date()
 
-        # Verifica se já houve uma coleta no dia.
-        if agora.date() > ultima_coleta:
-            exp_scrapper.buscar_clans()
-            sleep(tempo_para_nove_horas())
+            # Verifica se já houve uma coleta no dia.
+            if agora.date() > ultima_coleta:
+                await msg_coletando_exp()
+                exp_scrapper.buscar_clans()
+                await msg_padrao()
+                sleep(tempo_para_nove_horas())
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(asincrono())
 
 def loop_mensal():
-    while True:
-        sleep(84600)
+    async def asincrono():
+        while True:
+            sleep(84600)
+            if date.today().day == 1:
+                await bot.change_presence(activity = discord.Game(name = 'Buscando clãs...'))
+                nomes_scrapper.buscar_clans()
+                await msg_padrao()
 
-        if date.today().day == 1:
-            nomes_scrapper.buscar_clans()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(asincrono())
 
 async def lista_comandos(message):
     if backend.possui_nv_acesso(1, int(message.author.id)):
@@ -640,7 +661,7 @@ async def remover(ctx, *args):
 
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity = discord.Game(name = 'Marca o bot p/ cmd'))
+    await msg_padrao()
     print(f'>> {bot.user} on-line!')
     
 @bot.event
