@@ -76,11 +76,11 @@ def resgatar_clans() -> list:
 
     try:
         db = Conexao()
-        return db.consultar(
-            "SELECT DISTINCT ON (id_clan) id_clan, nome \
-            FROM nomes \
-            ORDER BY id_clan, data_alterado DESC"
-        )
+        return db.consultar("""
+            SELECT DISTINCT ON (id_clan) id_clan, nome
+            FROM nomes
+            ORDER BY id_clan, data_alterado DESC
+        """)
     finally:
         db.fechar()
 
@@ -101,32 +101,31 @@ def resgatar_rank_geral(data: date = None) -> list[tuple[str]]:
         db = Conexao()
 
         if data:
-            return db.consultar(
-                "SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
-                FROM clans c \
-                JOIN ( \
-                    SELECT DISTINCT ON (id_clan) id_clan, nome \
-                    FROM nomes \
-                    ORDER BY id_clan, data_alterado DESC \
-                ) n ON c.id = n.id_clan \
-                JOIN estatisticas e ON c.id = e.id_clan \
-                WHERE c.arquivado = false \
-                AND date_trunc('day', e.data_hora) = %s",
-                data
-            )
+            return db.consultar("""
+                SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora 
+                FROM clans c
+                JOIN (
+                    SELECT DISTINCT ON (id_clan) id_clan, nome
+                    FROM nomes
+                    ORDER BY id_clan, data_alterado DESC
+                ) n ON c.id = n.id_clan
+                JOIN estatisticas e ON c.id = e.id_clan
+                WHERE c.arquivado = false
+                AND date_trunc('day', e.data_hora) = %s
+            """, data)
 
-        return db.consultar(
-            "SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
-            FROM clans c \
-            JOIN ( \
-                SELECT DISTINCT ON (id_clan) id_clan, nome \
-                FROM nomes \
-                ORDER BY id_clan, data_alterado DESC \
-            ) n ON c.id = n.id_clan \
-            JOIN estatisticas e ON c.id = e.id_clan \
-            WHERE c.arquivado = false \
-            ORDER BY n.nome, e.data_hora DESC"
-        )
+        return db.consultar("""
+            SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
+            FROM clans c
+            JOIN (
+                SELECT DISTINCT ON (id_clan) id_clan, nome
+                FROM nomes
+                ORDER BY id_clan, data_alterado DESC
+            ) n ON c.id = n.id_clan
+            JOIN estatisticas e ON c.id = e.id_clan
+            WHERE c.arquivado = false
+            ORDER BY n.nome, e.data_hora DESC
+        """)
     finally:
         db.fechar()
 
@@ -152,50 +151,49 @@ def resgatar_rank_mensal(data_inicio: date = None, data_fim: date = None) -> lis
         
         # Não especificou mês; assume data mais recente.
         if data_inicio == None:
-            fim = db.consultar(
-                "SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
-                FROM clans c \
-                JOIN ( \
-                    SELECT DISTINCT ON (id_clan) id_clan, nome \
-                    FROM nomes \
-                    ORDER BY id_clan, data_alterado DESC \
-                ) n ON c.id = n.id_clan \
-                JOIN estatisticas e ON c.id = e.id_clan \
-                WHERE c.arquivado = false \
-                ORDER BY n.nome, e.data_hora DESC"
-            )
+            fim = db.consultar("""
+                SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
+                FROM clans c
+                JOIN (
+                    SELECT DISTINCT ON (id_clan) id_clan, nome
+                    FROM nomes
+                    ORDER BY id_clan, data_alterado DESC
+                ) n ON c.id = n.id_clan
+                JOIN estatisticas e ON c.id = e.id_clan
+                WHERE c.arquivado = false 
+                ORDER BY n.nome, e.data_hora DESC
+            """)
 
             mes_passado = fim[0][2].date() - timedelta(days = 30)
 
-            inicio = db.consultar(
-                "SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
-                FROM clans c \
-                JOIN ( \
-                    SELECT DISTINCT ON (id_clan) id_clan, nome \
-                    FROM nomes \
-                    ORDER BY id_clan, data_alterado DESC \
-                ) n ON c.id = n.id_clan \
-                JOIN estatisticas e ON c.id = e.id_clan \
-                WHERE c.arquivado = false \
-                AND date_trunc('day', e.data_hora) = %s \
-                ORDER BY n.nome, e.exp_total",
-                mes_passado
-            )
+            inicio = db.consultar("""
+                SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
+                FROM clans c
+                JOIN (
+                    SELECT DISTINCT ON (id_clan) id_clan, nome
+                    FROM nomes
+                    ORDER BY id_clan, data_alterado DESC
+                ) n ON c.id = n.id_clan
+                JOIN estatisticas e ON c.id = e.id_clan
+                WHERE c.arquivado = false
+                AND date_trunc('day', e.data_hora) = %s
+                ORDER BY n.nome, e.exp_total
+            """, mes_passado)
 
             # Pega a data mais antiga disponível.
             if not inicio:
-                inicio = db.consultar(
-                    "SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
-                    FROM clans c \
-                    JOIN ( \
-                        SELECT DISTINCT ON (id_clan) id_clan, nome \
-                        FROM nomes \
-                        ORDER BY id_clan, data_alterado DESC \
-                    ) n ON c.id = n.id_clan \
-                    JOIN estatisticas e ON c.id = e.id_clan \
-                    WHERE c.arquivado = false \
-                    ORDER BY n.nome, e.data_hora"
-                )
+                inicio = db.consultar("""
+                    SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
+                    FROM clans c
+                    JOIN (
+                        SELECT DISTINCT ON (id_clan) id_clan, nome
+                        FROM nomes
+                        ORDER BY id_clan, data_alterado DESC
+                    ) n ON c.id = n.id_clan
+                    JOIN estatisticas e ON c.id = e.id_clan
+                    WHERE c.arquivado = false
+                    ORDER BY n.nome, e.data_hora
+                """)
         else:
             hoje = datetime.now().date()
             
@@ -205,38 +203,36 @@ def resgatar_rank_mensal(data_inicio: date = None, data_fim: date = None) -> lis
             if data_fim > hoje:
                 return -2
             
-            fim = db.consultar(
-                "SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
-                FROM clans c \
-                JOIN ( \
-                    SELECT DISTINCT ON (id_clan) id_clan, nome \
-                    FROM nomes \
-                    ORDER BY id_clan, data_alterado DESC \
-                ) n ON c.id = n.id_clan \
-                JOIN estatisticas e ON c.id = e.id_clan \
-                WHERE c.arquivado = false \
-                AND date_trunc('day', e.data_hora) = %s \
-                ORDER BY n.nome, e.exp_total",
-                data_fim
-            ) 
+            fim = db.consultar("""
+                SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora 
+                FROM clans c 
+                JOIN ( 
+                    SELECT DISTINCT ON (id_clan) id_clan, nome 
+                    FROM nomes 
+                    ORDER BY id_clan, data_alterado DESC 
+                ) n ON c.id = n.id_clan 
+                JOIN estatisticas e ON c.id = e.id_clan 
+                WHERE c.arquivado = false 
+                AND date_trunc('day', e.data_hora) = %s
+                ORDER BY n.nome, e.exp_total
+            """, data_fim) 
 
             if not fim:
                 return -3
 
-            inicio = db.consultar(
-                "SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
-                FROM clans c \
-                JOIN ( \
-                    SELECT DISTINCT ON (id_clan) id_clan, nome \
-                    FROM nomes \
-                    ORDER BY id_clan, data_alterado DESC \
-                ) n ON c.id = n.id_clan \
-                JOIN estatisticas e ON c.id = e.id_clan \
-                WHERE c.arquivado = false \
-                AND date_trunc('day', e.data_hora) = %s \
-                ORDER BY n.nome, e.exp_total",
-                data_inicio
-            )
+            inicio = db.consultar("""
+                SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
+                FROM clans c
+                JOIN (
+                    SELECT DISTINCT ON (id_clan) id_clan, nome
+                    FROM nomes
+                    ORDER BY id_clan, data_alterado DESC
+                ) n ON c.id = n.id_clan
+                JOIN estatisticas e ON c.id = e.id_clan
+                WHERE c.arquivado = false
+                AND date_trunc('day', e.data_hora) = %s
+                ORDER BY n.nome, e.exp_total
+            """, data_inicio)
 
             if not inicio:
                 return -4
@@ -301,39 +297,37 @@ def resgatar_rank_dxp(quantos_atras: int) -> list[tuple[str]] | int:
         else:
             fim = double_atual[2]
             
-        xp_inicio = db.consultar(
-            "SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
-            FROM clans c \
-            JOIN ( \
-                SELECT DISTINCT ON (id_clan) id_clan, nome \
-                FROM nomes \
-                ORDER BY id_clan, data_alterado DESC \
-            ) n ON c.id = n.id_clan \
-            JOIN estatisticas e ON c.id = e.id_clan \
-            WHERE c.arquivado = false \
-            AND (data_hora BETWEEN %s AND %s) \
-            ORDER BY n.nome, e.exp_total",
-            inicio, fim
-        )
+        xp_inicio = db.consultar("""
+            SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
+            FROM clans c
+            JOIN (
+                SELECT DISTINCT ON (id_clan) id_clan, nome
+                FROM nomes
+                ORDER BY id_clan, data_alterado DESC
+            ) n ON c.id = n.id_clan
+            JOIN estatisticas e ON c.id = e.id_clan
+            WHERE c.arquivado = false
+            AND (data_hora BETWEEN %s AND %s)
+            ORDER BY n.nome, e.exp_total
+        """, inicio, fim)
 
         # DXP começou mas ainda não houve a primeira coleta de XP.
         if not xp_inicio:
             return -3
 
-        xp_fim = db.consultar(
-            "SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora \
-            FROM clans c \
-            JOIN ( \
-                SELECT DISTINCT ON (id_clan) id_clan, nome \
-                FROM nomes \
-                ORDER BY id_clan, data_alterado DESC \
-            ) n ON c.id = n.id_clan \
-            JOIN estatisticas e ON c.id = e.id_clan \
-            WHERE c.arquivado = false \
-            AND (data_hora BETWEEN %s AND %s) \
-            ORDER BY n.nome, e.exp_total DESC",
-            inicio, fim
-        )
+        xp_fim = db.consultar("""
+            SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
+            FROM clans c
+            JOIN (
+                SELECT DISTINCT ON (id_clan) id_clan, nome
+                FROM nomes
+                ORDER BY id_clan, data_alterado DESC
+            ) n ON c.id = n.id_clan
+            JOIN estatisticas e ON c.id = e.id_clan
+            WHERE c.arquivado = false
+            AND (data_hora BETWEEN %s AND %s)
+            ORDER BY n.nome, e.exp_total DESC
+        """, inicio, fim)
 
         # Só houve uma coleta de XP desde o início do Double.
         if xp_inicio == xp_fim:
