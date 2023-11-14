@@ -331,145 +331,102 @@ async def rank(ctx, *args):
     args = list(args)
 
     # Detecta se a pessoa botou o formato antes, depois ou até sem uma data.
-    if "txt" in args:
-        args.remove("txt")
-        tipo = 1
-    elif "json" in args:
-        args.remove("json")
-        tipo = 2
-    elif "csv" in args:
-        args.remove("csv")
-        tipo = 3
-    elif "xlsx" in args:
-        args.remove("xlsx")
-        tipo = 4
-    elif "cru" in args:
-        args.remove("cru")
-        tipo = 5
-    else:
-        # Se colocar algum formato que não é suportado.
+    FORMATOS = {"txt": 1, "json": 2, "csv": 3, "xlsx": 4, "cru": 5}
+
+    tipo = None
+
+    for formato, valor in FORMATOS.items():
+        if formato in args:
+            args.remove(formato)
+            tipo = valor
+            break
+    else: 
+        # Formato não foi especificado ou é inválido.
+        tipo = 1 
+
+        # Tenta remover o formato (não-suportado) que foi dado ao comando.
         if len(args) > 1:
+            # Ignora números, logo, ignora possíveis datas.
             if not args[1].isdigit():
                 args[1].pop()
             if not args[-1].isdigit():
                 args[-1].pop()
-        tipo = 1
 
     if "geral" in args:
-        if 4 > len(args) > 1:
+        if not (4 > len(args) > 1):
             return await ctx.message.channel.send(
                 f"Use o formato `@Ranks PT-BR rank geral DD MM AAAA`. {ctx.message.author.mention}"
             )
-        
-        data = None
-        
-        if len(args) == 4:
-            try:
-                data = date(
-                    year = int(args[3]), 
-                    month = int(args[2]), 
-                    day = int(args[1])
-                )
-            except ValueError:
-                return await ctx.message.channel.send(
-                    f"Use o formato `DD MM AAAA` para repr esentar a data. {ctx.message.author.mention}"
-                )
-        
-        query = backend.resgatar_rank_geral(data)
 
+        try:
+            data = date(year = int(args[3]), month = int(args[2]), day = int(args[1]))
+        except ValueError:
+            return await ctx.message.channel.send(
+                f"Use o formato `DD MM AAAA` para representar a data. {ctx.message.author.mention}"
+            )
+
+        query = backend.resgatar_rank_geral(data)
         if not query:
             return await ctx.message.channel.send(
                 f"Não há registros do dia `{data.strftime('%d/%m/%Y')}`. {ctx.message.author.mention}"
             )
-        
+
         msg = f"Rank Geral `{query[0][2].strftime('%d/%m/%Y')}`"
         return await enviar_mensagem()
     
     if "mensal" in args:
-        if 7 > len(args) > 1:
+        if not (7 > len(args) > 1):
             return await ctx.message.channel.send(
                 f"Use o formato `@Ranks PT-BR rank mensal DD MM AAAA DD MM AAAA`. {ctx.message.author.mention}"
             )
-        
-        inicio, fim = None, None
-        
-        if len(args) == 7:
-            try:
-                inicio = date(
-                    year = int(args[3]), 
-                    month = int(args[2]), 
-                    day = int(args[1])
-                )
-                fim = date(
-                    year = int(args[6]), 
-                    month = int(args[5]), 
-                    day = int(args[4])
-                )
-            except ValueError:
-                return await ctx.message.channel.send(
-                    f"Use o formato `DD MM AAAA` para representar as datas. {ctx.message.author.mention}"
-                )
+
+        try:
+            inicio = date(year = int(args[3]), month = int(args[2]), day = int(args[1]))
+            fim = date(year = int(args[6]), month = int(args[5]), day = int(args[4]))
+        except ValueError:
+            return await ctx.message.channel.send(
+                f"Use o formato `DD MM AAAA` para representar as datas. {ctx.message.author.mention}"
+            )
 
         query = backend.resgatar_rank_mensal(inicio, fim)
+        erros = {
+            -1: f"A data `{inicio.strftime('%d/%m/%Y')}` ainda não chegou! {ctx.message.author.mention}",
+            -2: f"A data `{fim.strftime('%d/%m/%Y')}` ainda não chegou! {ctx.message.author.mention}",
+            -3: f"Não há dados registrados para o período terminando em `{fim.strftime('%d/%m/%Y')}`! {ctx.message.author.mention}",
+            -4: f"Não há dados registrados para o período começando em `{inicio.strftime('%d/%m/%Y')}`! {ctx.message.author.mention}"
+        }
 
-        if query == -1:
-            return await ctx.message.channel.send(
-                f"A data `{inicio.strftime('%d/%m/%Y')}` ainda não chegou! {ctx.message.author.mention}"
-            )
-        elif query == -2:
-            return await ctx.message.channel.send(
-                f"A data `{fim.strftime('%d/%m/%Y')}` ainda não chegou! {ctx.message.author.mention}"
-            )
-        elif query == -3:
-            return await ctx.message.channel.send(
-                f"Não há dados registrados para o período terminando em `{fim.strftime('%d/%m/%Y')}`! {ctx.message.author.mention}"
-            )
-        elif query == -4:
-            return await ctx.message.channel.send(
-                f"Não há dados registrados para o período começando em `{inicio.strftime('%d/%m/%Y')}`! {ctx.message.author.mention}"
-            )
+        if type(query) != list:
+            return await ctx.message.channel.send(erros[query])
 
         data_inicio, data_fim, query = query
         msg = f"Rank Mensal de `{data_inicio}` até `{data_fim}`"
         return await enviar_mensagem()
-    
+
     if "dxp" in args:
         if len(args) > 2:
             return await ctx.message.channel.send(
                 f"Use o formato `@Ranks PT-BR rank dxp N`. {ctx.message.author.mention}"
             )
 
-        quantos_atras = 0
-
-        if len(args) > 1:
-            if args[1].isdigit():
-                quantos_atras = int(args[1])
-            else:
-                return await ctx.message.channel.send(
-                    f"Especifique um número inteiro que condiga a quantos Doubles atrás foi o DXP desejado! {ctx.message.author.mention}"
-                )
+        quantos_atras = int(args[1]) if len(args) > 1 and args[1].isdigit() else 0
 
         query = backend.resgatar_rank_dxp(quantos_atras)
+        erros = {
+            -1: f"Não há histórico de um DXP tão antigo assim para exibir; tente um número menor. {ctx.message.author.mention}",
+            -2: f"Não há histórico de DXP para exibir; use `@Ranks PT-BR dxp` para ver informações sobre futuros Doubles. {ctx.message.author.mention}",
+            -3: f"Não há dados suficientes para gerar um rank ainda; tente novamente dentro de 1 hora. {ctx.message.author.mention}"
+        }
 
-        if query == -1:
-            return await ctx.message.channel.send(
-                f"Não há histórico de um DXP tão antigo assim para exibir; tente um número menor. {ctx.message.author.mention}"
-            )
-        elif query == -2:
-            return await ctx.message.channel.send(
-                f"Não há histórico de DXP para exibir; use `@Ranks PT-BR dxp` para ver informações sobre futuros Doubles. {ctx.message.author.mention}"
-            )
-        elif query == -3:
-            return await ctx.message.channel.send(
-                f"Não há dados suficientes para gerar um rank ainda; tente novamente dentro de 1 hora. {ctx.message.author.mention}"
-            )
-        
+        if type(query) != list:
+            return await ctx.message.channel.send(erros[query])
+
         data_inicio, data_fim, query = query
         msg = f"Rank DXP de `{data_inicio}` até `{data_fim}`"
         return await enviar_mensagem()
-    
+
     await ctx.message.channel.send(
-        f"Você precisa especificar o tipo de rank! {ctx.message.author.mention}",
+        f"Você precisa especificar o tipo de rank! {ctx.message.author.mention}"
     )
 
 @bot.command()
