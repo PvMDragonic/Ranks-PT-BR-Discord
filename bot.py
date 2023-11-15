@@ -43,6 +43,7 @@ def loop_diario():
             agora = datetime.now()
 
             if backend.dxp_acontecendo():
+                sleep(30) # Evita erro caso reinicie o bot durante um DXP.
                 await msg_coletando_exp()
                 exp_scrapper.buscar_clans()
                 await msg_padrao()
