@@ -333,9 +333,10 @@ def resgatar_rank_dxp(quantos_atras: int) -> list[tuple[str]] | int:
         if xp_inicio == xp_fim:
             return -3
 
-        # Pegando um valor qualquer pra servir de referência pra data.
-        data_hora_inicio = xp_inicio[0][2].strftime('%d/%m/%Y %H:%M')
-        data_hora_fim = xp_fim[0][2].strftime('%d/%m/%Y %H:%M')
+        # Usa o clã em primeiro lugar como base pras datas.4
+        data_hora_inicio = max(xp_inicio, key = lambda x: x[1])[2].strftime('%d/%m/%Y %H:%M')
+        data_hora_fim = max(xp_fim, key = lambda x: x[1])[2].strftime('%d/%m/%Y %H:%M')
+        
         rank = [
             (nome, final_exp - inicio_exp)
             for (nome, final_exp, _), (_, inicio_exp, _) in zip(xp_fim, xp_inicio)
