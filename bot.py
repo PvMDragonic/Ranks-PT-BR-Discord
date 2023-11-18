@@ -85,97 +85,47 @@ def loop_mensal():
 async def lista_comandos(message):
     if backend.possui_nv_acesso(1, int(message.author.id)):
         embed = discord.Embed(
-            title = f"COMANDOS DA MODERAÇÃO",  
+            title = "COMANDOS DA MODERAÇÃO",
+            description = "Comandos para quem faz parte da Equipe de Moderação.\n\n᲼᲼",
             color = 0x7a8ff5
         )
 
-        embed.add_field(
-            name = f'@Ranks PT-BR criar dxp [data_inicio] [data_fim]', 
-            value = f'Registra um novo DXP.\n᲼᲼', 
-            inline = False
-        )
+        comandos = [
+            ("@Ranks PT-BR criar dxp [DD MM AAAA] [DD MM AAAA]", "Registra um novo DXP entre [data início] e [data fim].\n᲼᲼"),
+            ("@Ranks PT-BR deletar dxp", "Deleta o DXP que foi registrado por último.\n᲼᲼"),
+            ("@Ranks PT-BR adicionar clan [nome]", "Adiciona um clã ao banco de dados do bot.\n᲼᲼"),
+            ("@Ranks PT-BR remover clan [nome]", "Remove um clã do banco de dados do bot.\n᲼᲼"),
+        ]
 
-        embed.add_field(
-            name = f'@Ranks PT-BR deletar dxp', 
-            value = f'Deleta o DXP registrado mais recente.\n᲼᲼', 
-            inline = False
-        )
-
-        embed.add_field(
-            name = f'@Ranks PT-BR adicionar clan [nome]', 
-            value = f'Adiciona um clã ao banco de dados do bot.\n᲼᲼', 
-            inline = False
-        )
-
-        embed.add_field(
-            name = f'@Ranks PT-BR remover clan [nome]', 
-            value = f'Remove um clã do banco de dados do bot.\n᲼᲼', 
-            inline = False
-        )
+        for cmd, descricao in comandos:
+            embed.add_field(name = cmd, value = descricao, inline = False)
 
         embed.set_footer(text = "OBS.: O uso desses comandos é registrado no log, com o nome de quem usou.")
 
-        await message.author.send(
-            message.author.mention, 
-            embed = embed
+        await message.author.send(embed = embed)
+
+    with open('lista_comandos.json', 'r', encoding = 'utf-8') as json_file:
+        comandos = json.load(json_file)
+
+    for comando in comandos:
+        embed = discord.Embed(
+            title = comando['title'],
+            description = comando['description'],
+            color = 0x7a8ff5
         )
 
-    embed = discord.Embed(
-        title = f"LISTA DE COMANDOS",  
-        color = 0x7a8ff5
-    )
+        for field in comando['fields']:
+            embed.add_field(
+                name = field['name'], 
+                value = field['value'], 
+                inline = field['inline']
+            )
+        
+        if comando['footer']:
+            embed.set_footer(text = comando['footer'])
 
-    embed.add_field(
-        name = f'@Ranks PT-BR dxp', 
-        value = f'Mostra informações sobre o DXP.\n᲼᲼', 
-        inline = False
-    ) 
-
-    embed.add_field(
-        name = f'@Ranks PT-BR rank geral [data] [formato]', 
-        value = f'Lista o rank geral dos clãs pt-br.\
-            \n\n__Parâmetros opcionais:__\
-            \n**[data] (DD MM AAAA)** — Específica uma data para o rankeamento;\
-            \n**[formato] (txt/json/csv/xlsx/cru)** — Especifica o formato do arquivo.\
-            \n```@Ranks PT-BR rank geral 10 04 2023\
-            \n@Ranks PT-BR rank geral 10 04 2023 json\
-            \n@Ranks PT-BR rank geral cru```\
-            \n᲼᲼', 
-        inline = False
-    )
-
-    embed.add_field(
-        name = f'@Ranks PT-BR rank mensal [datas] [formato]', 
-        value = f'Lista o rank do último mês dos clãs pt-br ativos.\
-            \n\n__Parâmetros opcionais:__\
-            \n**[datas] (DD MM AAAA DD MM AAAA)** — Especifica um período para o rankeamento.\
-            \n**[formato] (txt/json/csv/xlsx/cru)** — Especifica o formato do arquivo.\
-            \n```@Ranks PT-BR rank mensal 10 04 2023 10 05 2023\
-            \n@Ranks PT-BR rank mensal 10 04 2023 10 05 2023 csv\
-            \n@Ranks PT-BR rank mensal xlsx```\
-            \n᲼᲼', 
-        inline = False
-    )
-
-    embed.add_field(
-        name = f'@Ranks PT-BR rank dxp [quantos_atrás] [formato]', 
-        value = f'Lista o rank de Doubles passados dos clãs pt-br ativos.\
-            \n\n__Parâmetros opcionais:__\
-            \n**[quantos_atrás] (n)** — Seleciona DXP passado condigente ao número.\
-            \n**[formato] (txt/json/csv/xlsx/cru)** — Especifica o formato do arquivo.\
-            \n```@Ranks PT-BR rank dxp 1\
-            \n@Ranks PT-BR rank dxp 1 cru\
-            \n@Ranks PT-BR rank dxp txt```\
-            \n᲼᲼', 
-        inline = False
-    )
-
-    embed.set_footer(text = "OBS.: O formato cru dos dados limita o rankeamento ao top 50 devido ao tamanho.")
-
-    await message.channel.send(
-            message.author.mention, 
-            embed = embed
-        )
+        await message.channel.send(embed = embed)
+        sleep(0.25)
 
 @bot.command()
 async def dxp(ctx, *args):

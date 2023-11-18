@@ -1,0 +1,59 @@
+[
+    {
+        "title": "@Ranks PT-BR dxp",
+        "description": "Mostra informações sobre o DXP.",
+        "fields": [],
+        "footer": null
+    },
+    {
+        "title": "@Ranks PT-BR rank geral",
+        "description": "Lista o ranking geral dos clãs pt-br.\n᲼᲼",
+        "fields": [
+            {
+                "name": "__Parâmetros opcionais__",
+                "value": "**[data] (DD MM AAAA)** — Específica uma data para o ranqueamento;\n**[formato] (txt/json/csv/xlsx/cru)** — Especifica o formato do arquivo.\n᲼᲼",
+                "inline": false
+            },
+            {
+                "name": "__Exêmplos__",
+                "value": "```@Ranks PT-BR rank geral 10 04 2023\n@Ranks PT-BR rank geral 10 04 2023 json\n@Ranks PT-BR rank geral cru```",
+                "inline": false
+            }
+        ],
+        "footer": "OBS.: O formato cru dos dados limita o ranqueamento ao top 50 devido ao tamanho."
+    },
+    {
+        "title": "@Ranks PT-BR rank mensal",
+        "description": "Lista o ranking do último mês dos clãs pt-br ativos.\n᲼᲼",
+        "fields": [
+            {
+                "name": "__Parâmetros opcionais__",
+                "value": "**[datas] (DD MM AAAA DD MM AAAA)** — Especifica um período para o ranqueamento;\n**[formato] (txt/json/csv/xlsx/cru)** — Especifica o formato do arquivo.\n᲼᲼",
+                "inline": false
+            },
+            {
+                "name": "__Exêmplos__",
+                "value": "```@Ranks PT-BR rank mensal 10 04 2023 10 05 2023\n@Ranks PT-BR rank mensal 10 04 2023 10 05 2023 csv\n@Ranks PT-BR rank mensal xlsx```",
+                "inline": false
+            }
+        ],
+        "footer": "OBS.: O formato cru dos dados limita o ranqueamento ao top 50 devido ao tamanho."
+    },
+    {
+        "title": "@Ranks PT-BR rank dxp",
+        "description": "Lista o ranking de Doubles dos clãs pt-br ativos.\n᲼᲼",
+        "fields": [
+            {
+                "name": "__Parâmetros opcionais__",
+                "value": "**[quantos_atrás] (n)** — Seleciona DXP passado condigente ao número;\n**[formato] (txt/json/csv/xlsx/cru)** — Especifica o formato do arquivo.\n᲼᲼",
+                "inline": false
+            },
+            {
+                "name": "__Exêmplos__",
+                "value": "```@Ranks PT-BR rank dxp 1\n@Ranks PT-BR rank dxp 1 cru\n@Ranks PT-BR rank dxp txt```",
+                "inline": false
+            }
+        ],
+        "footer": "OBS.: O formato cru dos dados limita o ranqueamento ao top 50 devido ao tamanho."
+    }
+]
