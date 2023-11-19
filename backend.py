@@ -408,7 +408,7 @@ def dxp_acontecendo() -> bool:
 
 def dxp_restante() -> str:
     """
-    Retorna o tempo restante até o DXP mais recente acabar.
+    Retorna o tempo restante até o DXP em ocorrência acabar.
 
     Retorna:
         str:
@@ -420,14 +420,18 @@ def dxp_restante() -> str:
         fim = db.consultar("SELECT data_fim FROM dxp ORDER BY data_comeco DESC LIMIT 1")[0][0]
         restante = fim - datetime.now()
 
-        if restante.days >= 1:
+        if restante.days >= 2:
             return f"{restante.days} dias e {restante.seconds // 3600} horas restantes!"
-        elif restante.seconds > 3600:
+        elif restante.days >= 1:
+            return f"1 dia e {restante.seconds // 3600} horas restantes!"
+        elif restante.seconds > 7200:
             return f"{restante.seconds // 3600} horas restantes!"
-        elif 300 < restante.seconds < 3600:   
-            return f"{restante.seconds // 60} minutos restantes!"     
+        elif restante.seconds > 3600:
+            return f"1 hora restante!"
+        elif restante.seconds > 300:   
+            return f"{restante.seconds // 60} minutos restantes!"
         else:
-            return f"{restante.seconds // 60} encerramento iminente!" 
+            return "Encerramento iminente!" 
     finally:
         db.fechar()
 
