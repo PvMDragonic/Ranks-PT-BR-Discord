@@ -38,18 +38,26 @@ def loop_diario():
     async def msg_coletando_exp():
         await bot.change_presence(activity = discord.Game(name = 'Coletando EXP...'))
 
+    async def coletar_xp():
+        await msg_coletando_exp()
+        exp_scrapper.buscar_clans()
+        await msg_padrao()
+
     async def asincrono():
         while True:
             agora = datetime.now()
 
             if backend.dxp_acontecendo():
                 sleep(30) # Evita erro caso reinicie o bot durante um DXP.
-                await msg_coletando_exp()
-                exp_scrapper.buscar_clans()
-                await msg_padrao()
+                await coletar_xp()
                 
-                sleep(3600 - (datetime.now().timestamp() - agora.timestamp()))
-                continue
+                # Dá uma última coletada após o DXP acabar.
+                if backend.dxp_fim_eminente():
+                    sleep(tempo_para_nove_horas(prox_dia = False))
+                    await coletar_xp()
+                else:
+                    sleep(3600 - (datetime.now().timestamp() - agora.timestamp()))
+                    continue
 
             # Bot foi iniciado antes das nove da manhã.
             if agora.time() <= time(9, 5):
@@ -60,9 +68,7 @@ def loop_diario():
 
             # Verifica se já houve uma coleta no dia.
             if agora.date() > ultima_coleta:
-                await msg_coletando_exp()
-                exp_scrapper.buscar_clans()
-                await msg_padrao()
+                await coletar_xp()
                 sleep(tempo_para_nove_horas())
 
     loop = asyncio.new_event_loop()

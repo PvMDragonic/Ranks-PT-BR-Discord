@@ -435,6 +435,23 @@ def dxp_restante() -> str:
     finally:
         db.fechar()
 
+def dxp_fim_eminente() -> bool:
+    """
+    Retorna se o DXP está a 1 hora ou menos do fim.
+
+    Retorna:
+        bool:
+            True/False para o DXP estar no fim.
+    """
+
+    try:
+        db = Conexao()
+        fim = db.consultar("SELECT data_fim FROM dxp ORDER BY data_comeco DESC LIMIT 1")[0][0]
+        restante = fim - datetime.now()
+        return restante.seconds <= 3600
+    finally:
+        db.fechar()
+ 
 def adicionar_dxp(data_comeco: datetime, data_fim: datetime) -> None:
     """
     Adiciona um novo registro de DXP no banco de dados.
