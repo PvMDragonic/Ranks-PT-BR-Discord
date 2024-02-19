@@ -45,31 +45,33 @@ def loop_diario():
 
     async def asincrono():
         while True:
-            agora = datetime.now()
-
             if backend.dxp_acontecendo():
                 sleep(30) # Evita erro caso reinicie o bot durante um DXP.
+
+                agora = datetime.now()
                 await coletar_xp()
                 
-                # Dá uma última coletada após o DXP acabar.
-                if backend.dxp_fim_eminente():
-                    sleep(tempo_para_nove_horas(prox_dia = False))
-                    await coletar_xp()
-                else:
-                    sleep(3600 - (datetime.now().timestamp() - agora.timestamp()))
+                # Dorme por 1h menos o tempo que levou para o scrap.
+                sleep(3600 - (datetime.now().timestamp() - agora.timestamp()))
+
+                # Se faltar menos de 1h, ele segue e vai esperar pelas 9:05 da manhã.
+                if not backend.dxp_fim_eminente():                
                     continue
+            
+            agora = datetime.now()
 
             # Bot foi iniciado antes das nove da manhã.
             if agora.time() <= time(9, 5):
                 sleep(tempo_para_nove_horas(prox_dia = False))
                 continue
 
-            ultima_coleta = backend.resgatar_rank_geral()[0][2].date()
-
-            # Verifica se já houve uma coleta no dia.
-            if agora.date() > ultima_coleta:
+            ultima_coleta_registrada = backend.resgatar_rank_geral()[0][2].date()
+            dxp_recem_acabou = agora.date() == backend.resgatar_data_dxp()[2].date()
+            
+            if (agora.date() > ultima_coleta_registrada) or (dxp_recem_acabou and agora.time() <= time(10, 0)):
                 await coletar_xp()
-                sleep(tempo_para_nove_horas())
+            
+            sleep(tempo_para_nove_horas())
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)

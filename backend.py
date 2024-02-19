@@ -350,7 +350,7 @@ def resgatar_rank_dxp(quantos_atras: int) -> list[tuple[str]] | int:
     finally:
         db.fechar()
 
-def resgatar_data_dxp() -> tuple[str]:
+def resgatar_data_dxp() -> tuple[int, datetime, datetime]:
     """
     Retorna as informações do DXP que foi registrado por último.
 
@@ -448,7 +448,7 @@ def dxp_fim_eminente() -> bool:
         db = Conexao()
         fim = db.consultar("SELECT data_fim FROM dxp ORDER BY data_comeco DESC LIMIT 1")[0][0]
         restante = fim - datetime.now()
-        return restante.seconds <= 3600
+        return restante.total_seconds() <= 3600
     finally:
         db.fechar()
  
