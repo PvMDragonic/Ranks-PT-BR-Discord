@@ -307,22 +307,20 @@ async def rank(ctx, *args):
         if len(args) > 1:
             # Ignora números, logo, ignora possíveis datas.
             if not args[1].isdigit():
-                args[1].pop()
+                args.pop(1)
             if not args[-1].isdigit():
-                args[-1].pop()
+                args.pop(-1)
 
     if "geral" in args:
-        if not (4 > len(args) > 1):
-            return await ctx.message.channel.send(
-                f"Use o formato `@Ranks PT-BR rank geral DD MM AAAA`. {ctx.message.author.mention}"
-            )
-
-        try:
-            data = date(year = int(args[3]), month = int(args[2]), day = int(args[1]))
-        except ValueError:
-            return await ctx.message.channel.send(
-                f"Use o formato `DD MM AAAA` para representar a data. {ctx.message.author.mention}"
-            )
+        if len(args) == 1:
+            data = datetime.now().date()
+        else:
+            try:
+                data = date(year = int(args[3]), month = int(args[2]), day = int(args[1]))
+            except (ValueError, IndexError):
+                return await ctx.message.channel.send(
+                    f"Use o formato `DD MM AAAA` para representar uma data válida. {ctx.message.author.mention}"
+                )
 
         query = backend.resgatar_rank_geral(data)
         if not query:
@@ -334,18 +332,17 @@ async def rank(ctx, *args):
         return await enviar_mensagem()
     
     if "mensal" in args:
-        if not (7 > len(args) > 1):
-            return await ctx.message.channel.send(
-                f"Use o formato `@Ranks PT-BR rank mensal DD MM AAAA DD MM AAAA`. {ctx.message.author.mention}"
-            )
-
-        try:
-            inicio = date(year = int(args[3]), month = int(args[2]), day = int(args[1]))
-            fim = date(year = int(args[6]), month = int(args[5]), day = int(args[4]))
-        except ValueError:
-            return await ctx.message.channel.send(
-                f"Use o formato `DD MM AAAA` para representar as datas. {ctx.message.author.mention}"
-            )
+        if len(args) == 1:
+            inicio = datetime.now().date() - timedelta(days = 30)
+            fim = datetime.now().date()
+        else:
+            try:
+                inicio = date(year = int(args[3]), month = int(args[2]), day = int(args[1]))
+                fim = date(year = int(args[6]), month = int(args[5]), day = int(args[4]))
+            except (ValueError, IndexError):
+                return await ctx.message.channel.send(
+                    f"Use o formato `DD MM AAAA DD MM AAAA` para representar datas válidas. {ctx.message.author.mention}"
+                )
 
         query = backend.resgatar_rank_mensal(inicio, fim)
         erros = {
