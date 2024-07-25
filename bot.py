@@ -1,6 +1,6 @@
+from datetime import timedelta, datetime, date, time
 from discord.ext.commands import CommandNotFound
 from discord.ext import commands
-from datetime import timedelta, datetime, date, time
 from time import sleep
 import xlsxwriter
 import threading
@@ -10,9 +10,11 @@ import json
 import csv
 import io
 
+from backend import ClanController
+from backend import AdminController
+from backend import LogController
 import nomes_scrapper
 import exp_scrapper
-import backend
 
 with open("token.txt", 'r') as file:
     TOKEN = file.readline()
@@ -45,7 +47,7 @@ def loop_diario():
 
     async def asincrono():
         while True:
-            if backend.dxp_acontecendo():
+            if ClanController.dxp_acontecendo():
                 sleep(30) # Evita erro caso reinicie o bot durante um DXP.
 
                 agora = datetime.now()
@@ -55,18 +57,18 @@ def loop_diario():
                 sleep(3600 - (datetime.now().timestamp() - agora.timestamp()))
 
                 # Se faltar menos de 1h, ele segue e vai esperar pelas 9:05 da manhã.
-                if not backend.dxp_fim_eminente():                
+                if not ClanController.dxp_fim_eminente():                
                     continue
             
-            agora = datetime.now()
+            agora = datetime.now() 
 
             # Bot foi iniciado antes das nove da manhã.
             if agora.time() <= time(9, 5):
                 sleep(tempo_para_nove_horas(prox_dia = False))
                 continue
 
-            ultima_coleta_registrada = backend.resgatar_rank_geral()[0][2].date()
-            dxp_recem_acabou = agora.date() == backend.resgatar_data_dxp()[2].date()
+            ultima_coleta_registrada = ClanController.resgatar_rank_geral()[0][2].date()
+            dxp_recem_acabou = agora.date() == ClanController.resgatar_data_dxp()[2].date()
             
             if (agora.date() > ultima_coleta_registrada) or (dxp_recem_acabou and agora.time() <= time(10, 0)):
                 await coletar_xp()
@@ -91,7 +93,7 @@ def loop_mensal():
     loop.run_until_complete(asincrono())
 
 async def lista_comandos(message):
-    if backend.possui_nv_acesso(1, int(message.author.id)):
+    if AdminController.possui_nv_acesso(1, int(message.author.id)):
         embed = discord.Embed(
             title = "COMANDOS DA MODERAÇÃO",
             description = "Comandos para quem faz parte da Equipe de Moderação.\n\n᲼᲼",
@@ -136,15 +138,16 @@ async def lista_comandos(message):
         sleep(0.25)
 
 @bot.command()
-async def dxp(ctx, *args):
-    inicio_dxp = backend.resgatar_data_dxp()[1]
+async def dxp(ctx):
+    inicio_dxp = ClanController.resgatar_data_dxp()[1]
 
-    if backend.dxp_acontecendo():
-        ranks = backend.resgatar_rank_dxp(0)
+    if ClanController.dxp_acontecendo():
+        ranks = ClanController.resgatar_rank_dxp(0)
+        dxp_restante = ClanController.dxp_restante()
 
         if ranks == -3:
             embed = discord.Embed(
-                title = f"EXP EM DOBRO ATIVO — {backend.dxp_restante()}", 
+                title = f"EXP EM DOBRO ATIVO — {dxp_restante}", 
                 description = f"__Não há dados suficientes para gerar um rank ainda.__", 
                 color = 0x7a8ff5)
             embed.add_field(name = "\n", value = "Tente novamente dentro de 1 hora.", inline = False) 
@@ -158,7 +161,7 @@ async def dxp(ctx, *args):
         )[0:10]
 
         embed = discord.Embed(
-            title = f"EXP EM DOBRO ATIVO — {backend.dxp_restante()}", 
+            title = f"EXP EM DOBRO ATIVO — {dxp_restante}", 
             description = f"__Top 10 clãs:__", 
             color = 0x7a8ff5
         )
@@ -322,7 +325,7 @@ async def rank(ctx, *args):
                     f"Use o formato `DD MM AAAA` para representar uma data válida. {ctx.message.author.mention}"
                 )
 
-        query = backend.resgatar_rank_geral(data)
+        query = ClanController.resgatar_rank_geral(data)
         if not query:
             return await ctx.message.channel.send(
                 f"Não há registros do dia `{data.strftime('%d/%m/%Y')}`. {ctx.message.author.mention}"
@@ -344,12 +347,13 @@ async def rank(ctx, *args):
                     f"Use o formato `DD MM AAAA DD MM AAAA` para representar datas válidas. {ctx.message.author.mention}"
                 )
 
-        query = backend.resgatar_rank_mensal(inicio, fim)
+        query = ClanController.resgatar_rank_mensal(inicio, fim)
         erros = {
             -1: f"A data `{inicio.strftime('%d/%m/%Y')}` ainda não chegou! {ctx.message.author.mention}",
             -2: f"A data `{fim.strftime('%d/%m/%Y')}` ainda não chegou! {ctx.message.author.mention}",
             -3: f"Não há dados registrados para o período terminando em `{fim.strftime('%d/%m/%Y')}`! {ctx.message.author.mention}",
-            -4: f"Não há dados registrados para o período começando em `{inicio.strftime('%d/%m/%Y')}`! {ctx.message.author.mention}"
+            -4: f"Não há dados registrados para o período começando em `{inicio.strftime('%d/%m/%Y')}`! {ctx.message.author.mention}",
+            -5: f"Ocorreu um erro no resgate dos dados! {ctx.message.author.mention}"
         }
 
         if type(query) != list:
@@ -367,11 +371,12 @@ async def rank(ctx, *args):
 
         quantos_atras = int(args[1]) if len(args) > 1 and args[1].isdigit() else 0
 
-        query = backend.resgatar_rank_dxp(quantos_atras)
+        query = ClanController.resgatar_rank_dxp(quantos_atras)
         erros = {
             -1: f"Não há histórico de um DXP tão antigo assim para exibir; tente um número menor. {ctx.message.author.mention}",
             -2: f"Não há histórico de DXP para exibir; use `@Ranks PT-BR dxp` para ver informações sobre futuros Doubles. {ctx.message.author.mention}",
-            -3: f"Não há dados suficientes para gerar um rank ainda; tente novamente dentro de 1 hora. {ctx.message.author.mention}"
+            -3: f"Não há dados suficientes para gerar um rank ainda; tente novamente dentro de 1 hora. {ctx.message.author.mention}",
+            -4: f"Ocorreu um erro no resgate dos dados! {ctx.message.author.mention}"
         }
 
         if type(query) != list:
@@ -390,7 +395,7 @@ async def criar(ctx, *args):
     if not "dxp" in args:
         raise CommandNotFound
     
-    if not backend.possui_nv_acesso(1, int(ctx.message.author.id)):
+    if not AdminController.possui_nv_acesso(1, int(ctx.message.author.id)):
         return await ctx.message.channel.send(
             f"Você não tem permissão para acessar esse comando! {ctx.message.author.mention}"
         )
@@ -422,17 +427,17 @@ async def criar(ctx, *args):
             f"Você não inseriu uma data correta {ctx.message.author.mention}!"
         )
 
-    if backend.verificar_dxp(data_comeco, data_fim):
+    if ClanController.verificar_dxp(data_comeco, data_fim):
         return await ctx.message.channel.send(
             f"Já há um DXP registrado para as datas entre `{data_comeco.strftime('%d/%m/%Y')}` e `{data_fim.strftime('%d/%m/%Y')}`, {ctx.message.author.mention}!"
         )
 
-    if backend.adicionar_dxp(data_comeco, data_fim):
+    if AdminController.adicionar_dxp(data_comeco, data_fim):
         await ctx.message.channel.send(
             f"Double XP para as datas entre `{data_comeco.strftime('%d/%m/%Y')}` e `{data_fim.strftime('%d/%m/%Y')}` registrado com sucesso {ctx.message.author.mention}!"
         )
 
-        backend.adicionar_log(
+        LogController.adicionar_log(
             f"[{datetime.now()}] {ctx.message.author} registrou novo DXP de {data_comeco.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}."
         )
 
@@ -441,12 +446,12 @@ async def deletar(ctx, *args):
     if not "dxp" in args:
         raise CommandNotFound
     
-    if not backend.possui_nv_acesso(1, int(ctx.message.author.id)):
+    if not AdminController.possui_nv_acesso(1, int(ctx.message.author.id)):
         return await ctx.message.channel.send(
             f"Você não tem permissão para acessar esse comando! {ctx.message.author.mention}"
         )
     
-    datas = backend.deletar_dxp()
+    datas = AdminController.deletar_dxp()
 
     if not datas:
         return await ctx.message.channel.send(
@@ -457,14 +462,14 @@ async def deletar(ctx, *args):
             f"O DXP de {datas[0].strftime('%d/%m/%Y')} até {datas[1].strftime('%d/%m/%Y')} foi deletado. {ctx.message.author.mention}"
         )
 
-    backend.adicionar_log(
+    LogController.adicionar_log(
         f"[{datetime.now()}] {ctx.message.author} deletou o DXP de {datas[0].strftime('%d/%m/%Y')} até {datas[1].strftime('%d/%m/%Y')}."
     )
 
 @bot.command()
 async def adicionar(ctx, *args):
     if any([palavra in args for palavra in ["clan", "clã", "cla"]]):
-        if not backend.possui_nv_acesso(1, int(ctx.message.author.id)):
+        if not AdminController.possui_nv_acesso(1, int(ctx.message.author.id)):
             return await ctx.message.channel.send(
                 f"Você não tem permissão para acessar esse comando! {ctx.message.author.mention}"
             )
@@ -479,12 +484,12 @@ async def adicionar(ctx, *args):
                 f"O clã `{nome}` não foi encontrado no site oficial do RuneScape. {ctx.message.author.mention}"
             )
 
-        if not backend.adicionar_clan(clan_id, nome):
+        if not AdminController.adicionar_clan(clan_id, nome):
             return await ctx.message.channel.send(
                 f"O clã `{nome}` já está registrado. {ctx.message.author.mention}"
             )
         
-        backend.adicionar_log(
+        LogController.adicionar_log(
             f"[{datetime.now()}] {ctx.message.author.name} adicionou o clã {nome}."
         )
 
@@ -493,7 +498,7 @@ async def adicionar(ctx, *args):
         ) 
         
     if "mod" in args:
-        if not backend.possui_nv_acesso(2, int(ctx.message.author.id)):
+        if not AdminController.possui_nv_acesso(2, int(ctx.message.author.id)):
             return await ctx.message.channel.send(
                 f"Você não tem permissão para acessar esse comando! {ctx.message.author.mention}"
             )
@@ -507,12 +512,12 @@ async def adicionar(ctx, *args):
 
         nome = bot.get_user(usuario).display_name
 
-        if not backend.adicionar_moderador(usuario):
+        if not AdminController.adicionar_moderador(usuario):
             return await ctx.message.channel.send(
                 f"`{nome}` já faz parte da moderação. {ctx.message.author.mention}"
             )
         
-        backend.adicionar_log(
+        LogController.adicionar_log(
             f"[{datetime.now()}] {ctx.message.author.name} adicionou {nome} à moderação."
         )
 
@@ -523,7 +528,7 @@ async def adicionar(ctx, *args):
 @bot.command()
 async def remover(ctx, *args):
     if any([palavra in args for palavra in ["clan", "clã", "cla"]]):
-        if not backend.possui_nv_acesso(1, int(ctx.message.author.id)):
+        if not AdminController.possui_nv_acesso(1, int(ctx.message.author.id)):
             return await ctx.message.channel.send(
                 f"Você não tem permissão para acessar esse comando! {ctx.message.author.mention}"
             )
@@ -531,12 +536,12 @@ async def remover(ctx, *args):
         clan = "+".join(list(args))
         nome = clan.replace("+", " ") 
 
-        if not backend.remover_clan(clan):
+        if not AdminController.remover_clan(clan):
             return await ctx.message.channel.send(
                 f"O clã `{nome}` não está registrado. {ctx.message.author.mention}"
             )
         
-        backend.adicionar_log(
+        LogController.adicionar_log(
             f"[{datetime.now()}] {ctx.message.author.name} removeu o clã {nome}."
         )
 
@@ -545,7 +550,7 @@ async def remover(ctx, *args):
         ) 
         
     if "mod" in args:
-        if not backend.possui_nv_acesso(2, int(ctx.message.author.id)):
+        if not AdminController.possui_nv_acesso(2, int(ctx.message.author.id)):
             return await ctx.message.channel.send(
                 f"Você não tem permissão para acessar esse comando! {ctx.message.author.mention}"
             )
@@ -559,12 +564,12 @@ async def remover(ctx, *args):
 
         nome = bot.get_user(usuario).display_name
 
-        if not backend.remover_moderador(usuario):
+        if not AdminController.remover_moderador(usuario):
             return await ctx.message.channel.send(
                 f"`{nome}` não faz parte da moderação. {ctx.message.author.mention}"
             )
         
-        backend.adicionar_log(
+        LogController.adicionar_log(
             f"[{datetime.now()}] {ctx.message.author.name} removeu {nome} da moderação."
         )
 
@@ -603,7 +608,7 @@ async def on_message(message):
         
         await bot.process_commands(message)
     except discord.errors.Forbidden as e:
-        backend.adicionar_log(
+        LogController.adicionar_log(
             f"[{datetime.now()}] Erro de permissão em {message.guild.name}: {e}"
         )
 

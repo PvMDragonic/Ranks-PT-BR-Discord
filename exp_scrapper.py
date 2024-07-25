@@ -4,7 +4,8 @@ from lxml import html
 import requests
 import time
 
-import backend
+from backend import LogController
+from backend import ClanController
 
 def atualizar_exp(clans: list) -> None:
     estatisticas = []
@@ -44,20 +45,20 @@ def atualizar_exp(clans: list) -> None:
             except (requests.exceptions.RequestException, IndexError) as erro:
                 tentativas -= tentativas
                 if tentativas == 0:
-                    backend.adicionar_log(f"[{datetime.now()}] Erro na coleta de XP de {clan_nome}: {erro}")
+                    LogController.adicionar_log(f"[{datetime.now()}] Erro na coleta de XP de {clan_nome}: {erro}")
                     break
 
                 time.sleep(60)
 
-    backend.adicionar_estatisticas(estatisticas)
+    ClanController.adicionar_estatisticas(estatisticas)
 
 def buscar_clans() -> None:
     PARTES = 3
 
-    clans = backend.resgatar_clans()
+    clans = ClanController.resgatar_clans()
     clans = [clans[i::PARTES] for i in range(PARTES)]
 
-    backend.adicionar_log(
+    LogController.adicionar_log(
         f"[{datetime.now()}] Iniciando scrapping de EXP..."
     )
 
@@ -71,6 +72,6 @@ def buscar_clans() -> None:
     for t in threads:
         t.join()
 
-    backend.adicionar_log(
+    LogController.adicionar_log(
         f"[{datetime.now()}] Scrapping de EXP finalizado."
     )

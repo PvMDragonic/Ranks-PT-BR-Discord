@@ -6,7 +6,8 @@ import fasttext
 import requests
 import time
 
-import backend
+from backend import LogController
+from backend import ClanController
 
 # Supressa um warning inútil.
 fasttext.FastText.eprint = lambda x: None
@@ -65,12 +66,12 @@ def validar_ptbr(nomes: str) -> None:
             except (requests.exceptions.RequestException, IndexError) as erro:
                 tentativas -= tentativas
                 if tentativas == 0:
-                    backend.adicionar_log(f"[{datetime.now()}] Erro na coleta do clã {nome}: {erro}")
+                    LogController.adicionar_log(f"[{datetime.now()}] Erro na coleta do clã {nome}: {erro}")
                     break
 
                 time.sleep(60)
 
-    backend.adicionar_clans(ptbr)
+    ClanController.adicionar_clans(ptbr)
 
 def encontrar_clans(lista: list) -> None:
     nomes = []
@@ -107,7 +108,7 @@ def buscar_clans() -> None:
     quantia_paginas = [num for num in range(quantia_paginas)]
     quantia_paginas = [quantia_paginas[i::PROCESSOS] for i in range(PROCESSOS)]
 
-    backend.adicionar_log(
+    LogController.adicionar_log(
         f"[{datetime.now()}] Iniciando scrapping de clãs..."
     )
 
@@ -121,6 +122,6 @@ def buscar_clans() -> None:
     for p in processos:
        p.join()
 
-    backend.adicionar_log(
+    LogController.adicionar_log(
         f"[{datetime.now()}] Scrapping de clãs finalizado."
     )
