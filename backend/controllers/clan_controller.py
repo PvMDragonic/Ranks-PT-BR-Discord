@@ -79,7 +79,7 @@ class ClanController:
             db.fechar()
 
     @staticmethod
-    def resgatar_rank_geral(data: date = None) -> list[tuple[str]] | None:
+    def resgatar_rank_geral(data: date = None) -> list[tuple[str, int, datetime]] | None:
         """
         Retorna ranking com todos os clãs que não estejam arquivados.
 
@@ -128,7 +128,7 @@ class ClanController:
             db.fechar()
 
     @staticmethod
-    def resgatar_rank_mensal(data_inicio: date = None, data_fim: date = None) -> list[tuple[str]] | int:
+    def resgatar_rank_mensal(data_inicio: date = None, data_fim: date = None) -> tuple[datetime, datetime, list[tuple[str, int]]] | int:
         """
         Retorna ranking dos últimos 30 dias com todos os clãs que não estejam arquivados.
 
@@ -139,8 +139,8 @@ class ClanController:
                 Ponto limite para o ranking.
 
         Retorna: 
-            list: 
-                [data_inicio, data_fim, [(nome, exp_total), ...]]
+            tuple: 
+                (data_inicio, data_fim, [(nome, exp_total), ...])
             int: 
                 Código de erro caso dê problema com alguma data.
         """
@@ -243,11 +243,11 @@ class ClanController:
                 if final_exp != inicio_exp
             ]
             
-            return [
+            return (
                 data_hora_inicio,
                 data_hora_fim,
                 rank
-            ]
+            )
         except Exception as e:
             LogModel.adicionar_log(f"[{datetime.now()}] Erro no ranking mensal: {e}")
             return -5
@@ -255,7 +255,7 @@ class ClanController:
             db.fechar()
 
     @staticmethod
-    def resgatar_rank_dxp(quantos_atras: int) -> list[tuple[str]] | int:
+    def resgatar_rank_dxp(quantos_atras: int) -> tuple[datetime, datetime, tuple[str, int]] | int:
         """
         Retorna ranking dos últimos 30 dias com todos os clãs que não estejam arquivados.
 
@@ -264,8 +264,8 @@ class ClanController:
                 Número de quantos DXPs atrás deve ser o DXP escolhido para o ranking.
 
         Retorna: 
-            list: 
-                [data_inicio, data_fim, [(nome, exp_total), ...]]
+            tuple: 
+                (data_inicio, data_fim, [(nome, exp_total), ...])
             int: 
                 Código de erro caso dê problema com alguma data.
         """
@@ -343,11 +343,11 @@ class ClanController:
                 for (nome, final_exp, _), (_, inicio_exp, _) in zip(xp_fim, xp_inicio)
             ]
 
-            return [
+            return (
                 data_hora_inicio,
                 data_hora_fim,
                 rank
-            ]
+            )
         except Exception as e:
             LogModel.adicionar_log(f"[{datetime.now()}] Erro no ranking DXP: {e}")
             return -4
