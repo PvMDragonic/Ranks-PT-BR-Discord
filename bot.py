@@ -48,7 +48,9 @@ def loop_diario():
     async def asincrono():
         while True:
             if ClanController.dxp_acontecendo():
-                sleep(30) # Evita erro caso reinicie o bot durante um DXP.
+                # Evita erro caso reinicie o bot durante um DXP, porque esse
+                # thread começa a ser executado antes do bot ficar online.
+                sleep(30) 
 
                 agora = datetime.now()
                 await coletar_xp()
@@ -67,11 +69,16 @@ def loop_diario():
                 sleep(tempo_para_nove_horas(prox_dia = False))
                 continue
 
-            ultima_coleta_registrada = ClanController.resgatar_rank_geral()[0][2].date()
-            dxp_recem_acabou = agora.date() == ClanController.resgatar_data_dxp()[2].date()
-            
-            if (agora.date() > ultima_coleta_registrada) or (dxp_recem_acabou and agora.time() <= time(10, 0)):
-                await coletar_xp()
+            try:
+                ultima_coleta_registrada = ClanController.resgatar_rank_geral()[0][2].date()
+                dxp_recem_acabou = agora.date() == ClanController.resgatar_data_dxp()[2].date()
+                
+                if (agora.date() > ultima_coleta_registrada) or (dxp_recem_acabou and agora.time() <= time(10, 0)):
+                    await coletar_xp()
+            except TypeError:
+                # Não há dados no BD para ter 'ultima_coleta_registrada' ou 'dxp_recem_acabou'.
+                sleep(30) # Evita erro, igual reinicio durante DXP.
+                await coletar_xp() 
             
             sleep(tempo_para_nove_horas())
 
@@ -139,8 +146,6 @@ async def lista_comandos(message):
 
 @bot.command()
 async def dxp(ctx):
-    inicio_dxp = ClanController.resgatar_data_dxp()[1]
-
     if ClanController.dxp_acontecendo():
         ranks = ClanController.resgatar_rank_dxp(0)
         dxp_restante = ClanController.dxp_restante()
@@ -177,14 +182,18 @@ async def dxp(ctx):
         return await ctx.message.channel.send(embed = embed)
 
     # Double ainda não passou.
-    if inicio_dxp > datetime.now():
-        embed = discord.Embed(
-            title = f"O próximo EXP em Dobro se aproxima!", 
-            description = f"O DXP começa em __{inicio_dxp.strftime('%d/%m/%Y')}__ às __09:00__, horário de Brasília (12:00 do jogo).", 
-            color = 0x7a8ff5)
-        embed.add_field(name = "", value = "Para o rank completo do último DXP, use **@Ranks PT-BR rank dxp**.", inline = False)
+    try:
+        inicio_dxp = ClanController.resgatar_data_dxp()[1]
+        if inicio_dxp > datetime.now():
+            embed = discord.Embed(
+                title = f"O próximo EXP em Dobro se aproxima!", 
+                description = f"O DXP começa em __{inicio_dxp.strftime('%d/%m/%Y')}__ às __09:00__, horário de Brasília (12:00 do jogo).", 
+                color = 0x7a8ff5)
+            embed.add_field(name = "", value = "Para o rank completo do último DXP, use **@Ranks PT-BR rank dxp**.", inline = False)
 
-        return await ctx.message.channel.send(embed = embed)
+            return await ctx.message.channel.send(embed = embed)
+    except TypeError:
+        pass # 'inicio_dxp' retornou como None, devido a erro.
     
     embed = discord.Embed(
         title = f"Nenhum EXP em Dobro ativo no momento.", 
