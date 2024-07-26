@@ -79,7 +79,7 @@ class ClanController:
             db.fechar()
 
     @staticmethod
-    def resgatar_rank_geral(data: date = None) -> list[tuple[str, int, datetime]] | None:
+    def resgatar_rank_geral(data: date | None = None) -> list[tuple[str, int, datetime]] | None:
         """
         Retorna ranking com todos os clãs que não estejam arquivados.
 
@@ -128,7 +128,7 @@ class ClanController:
             db.fechar()
 
     @staticmethod
-    def resgatar_rank_mensal(data_inicio: date = None, data_fim: date = None) -> tuple[datetime, datetime, list[tuple[str, int]]] | int:
+    def resgatar_rank_mensal(data_inicio: date | None = None, data_fim: date | None = None) -> tuple[datetime, datetime, list[tuple[str, int]]] | int:
         """
         Retorna ranking dos últimos 30 dias com todos os clãs que não estejam arquivados.
 
