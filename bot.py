@@ -23,9 +23,6 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix = commands.when_mentioned, intents = intents)    
 
-async def msg_padrao():
-    await bot.change_presence(activity = discord.Game(name = 'Marca o bot p/ cmd'))
-
 def loop_diario():
     def tempo_para_nove_horas(prox_dia = True):
         agr = datetime.now()
@@ -36,20 +33,27 @@ def loop_diario():
         
         diferenca = nove_horas - agr
         return diferenca.total_seconds()
-    
-    async def msg_coletando_exp():
-        await bot.change_presence(activity = discord.Game(name = 'Coletando EXP...'))
+
+    async def msg_padrao():
+        await bot.change_presence(activity = discord.Game(name = 'Marca o bot p/ cmd'))
 
     async def coletar_xp():
-        await msg_coletando_exp()
+        await bot.change_presence(activity = discord.Game(name = 'Coletando EXP...'))
         exp_scrapper.buscar_clans()
         await msg_padrao()
 
     async def asincrono():
         while True:
+            if date.today().day == 1 or len(ClanController.resgatar_clans()) == 0:
+                # Espera o bot iniciar (para não dar erro ao tentar mudar a presença).
+                sleep(30)
+
+                await bot.change_presence(activity = discord.Game(name = 'Buscando clãs...'))
+                nomes_scrapper.buscar_clans()
+                await msg_padrao()
+
             if ClanController.dxp_acontecendo():
-                # Evita erro caso reinicie o bot durante um DXP, porque esse
-                # thread começa a ser executado antes do bot ficar online.
+                # Evita erro, porque esse thread começa a ser executado antes do bot ficar online.
                 sleep(30) 
 
                 agora = datetime.now()
@@ -66,6 +70,7 @@ def loop_diario():
 
             # Bot foi iniciado antes das nove da manhã.
             if agora.time() <= time(9, 5):
+                await msg_padrao()
                 sleep(tempo_para_nove_horas(prox_dia = False))
                 continue
 
@@ -77,23 +82,9 @@ def loop_diario():
                     await coletar_xp()
             except TypeError:
                 # Não há dados no BD para ter 'ultima_coleta_registrada' ou 'dxp_recem_acabou'.
-                sleep(30) # Evita erro, igual reinicio durante DXP.
                 await coletar_xp() 
             
             sleep(tempo_para_nove_horas())
-
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(asincrono())
-
-def loop_mensal():
-    async def asincrono():
-        while True:
-            sleep(84600)
-            if date.today().day == 1:
-                await bot.change_presence(activity = discord.Game(name = 'Buscando clãs...'))
-                nomes_scrapper.buscar_clans()
-                await msg_padrao()
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -588,7 +579,6 @@ async def remover(ctx, *args):
 
 @bot.event
 async def on_ready():
-    await msg_padrao()
     print(f'>> {bot.user} on-line!')
     
 @bot.event
@@ -623,5 +613,4 @@ async def on_message(message):
 
 if __name__ == '__main__':
     threading.Thread(target = loop_diario).start()
-    threading.Thread(target = loop_mensal).start()
     bot.run(TOKEN)
