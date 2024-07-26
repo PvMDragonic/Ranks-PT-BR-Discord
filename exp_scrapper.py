@@ -55,8 +55,11 @@ def atualizar_exp(clans: list) -> None:
 def buscar_clans() -> None:
     PARTES = 3
 
-    clans = ClanController.resgatar_clans()
-    clans = [clans[i::PARTES] for i in range(PARTES)]
+    try:
+        clans = ClanController.resgatar_clans()
+        clans = [clans[i::PARTES] for i in range(PARTES)]
+    except TypeError:
+        return
 
     LogController.adicionar_log(
         f"[{datetime.now()}] Iniciando scrapping de EXP..."
