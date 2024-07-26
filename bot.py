@@ -356,7 +356,7 @@ async def rank(ctx, *args):
             -5: f"Ocorreu um erro no resgate dos dados! {ctx.message.author.mention}"
         }
 
-        if type(query) != list:
+        if isinstance(query, int):
             return await ctx.message.channel.send(erros[query])
 
         data_inicio, data_fim, query = query
@@ -379,7 +379,7 @@ async def rank(ctx, *args):
             -4: f"Ocorreu um erro no resgate dos dados! {ctx.message.author.mention}"
         }
 
-        if type(query) != list:
+        if isinstance(query, int):
             return await ctx.message.channel.send(erros[query])
 
         data_inicio, data_fim, query = query
