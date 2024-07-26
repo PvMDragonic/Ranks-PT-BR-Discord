@@ -55,7 +55,8 @@ class Conexao:
         try:
             cur = self._db.cursor()
             cur.execute(query, args)
-            return cur.fetchall()
+            res = cur.fetchall()
+            return res if res else None
         except psycopg2.errors:
             raise
 

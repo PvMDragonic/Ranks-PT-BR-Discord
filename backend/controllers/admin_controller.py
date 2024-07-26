@@ -47,8 +47,7 @@ class AdminController:
 
         try:
             db = Conexao()
-
-            if not db.consultar("SELECT * FROM admins WHERE id_discord = %s", id_usuario):
+            if db.consultar("SELECT * FROM admins WHERE id_discord = %s", id_usuario) is None:
                 return db.manipular("INSERT INTO admins(id_discord, nv_acesso) VALUES (%s, 1)", id_usuario)
                 
             return False
@@ -151,19 +150,30 @@ class AdminController:
 
         try:
             db = Conexao()
+            
+            query = db.consultar("SELECT * FROM clans WHERE id = %s", id)
 
-            if db.consultar("SELECT * FROM clans WHERE id = %s", id):
-                return False
+            # Clã não é registrado
+            if query is None:
+                db.manipular("INSERT INTO clans (id, arquivado) VALUES (%s, 'False')", id)
+                db.manipular(
+                    "INSERT INTO nomes (id_clan, nome, data_alterado) VALUES (%s, %s, %s)",
+                    id, nome, datetime.now().date()    
+                )
+                return True
+                
+            # Clã é registrado, mas arquivado.
+            if query[0][1] == True: 
+                db.manipular("UPDATE clans SET arquivado = false WHERE id = %s", id)
 
-            db.manipular("INSERT INTO clans (id, arquivado) VALUES (%s, 'False')", id)
             ultimo_nome = db.consultar("SELECT nome FROM nomes WHERE id_clan = %s ORDER BY data_alterado DESC LIMIT 1", id)
             if ultimo_nome != nome:
-                return db.manipular(
+                db.manipular(
                     "INSERT INTO nomes (id_clan, nome, data_alterado) VALUES (%s, %s, %s)",
                     id, nome, datetime.now().date()
                 )
 
-            return False
+            return True
         except Exception as e:
             LogModel.adicionar_log(f"[{datetime.now()}] Erro ao adicionar um clã: {e}")
             return False

@@ -95,9 +95,9 @@ class ClanController:
         try:
             db = Conexao()
 
-            if data:
+            if data is None:
                 return db.consultar("""
-                    SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora 
+                    SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
                     FROM clans c
                     JOIN (
                         SELECT DISTINCT ON (id_clan) id_clan, nome
@@ -106,11 +106,11 @@ class ClanController:
                     ) n ON c.id = n.id_clan
                     JOIN estatisticas e ON c.id = e.id_clan
                     WHERE c.arquivado = false
-                    AND date_trunc('day', e.data_hora) = %s
-                """, data)
+                    ORDER BY n.nome, e.data_hora DESC
+                """)
             
             return db.consultar("""
-                SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
+                SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora 
                 FROM clans c
                 JOIN (
                     SELECT DISTINCT ON (id_clan) id_clan, nome
@@ -119,8 +119,8 @@ class ClanController:
                 ) n ON c.id = n.id_clan
                 JOIN estatisticas e ON c.id = e.id_clan
                 WHERE c.arquivado = false
-                ORDER BY n.nome, e.data_hora DESC
-            """)
+                AND date_trunc('day', e.data_hora) = %s
+            """, data)
         except Exception as e:
             LogModel.adicionar_log(f"[{datetime.now()}] Erro no ranking geral: {e}")
             return None
@@ -148,7 +148,7 @@ class ClanController:
         try:
             db = Conexao()
 
-            if not data_inicio:
+            if data_inicio is None:
                 fim = db.consultar("""
                     SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
                     FROM clans c
@@ -162,7 +162,7 @@ class ClanController:
                     ORDER BY n.nome, e.data_hora DESC
                 """)
 
-                mes_passado = fim[0][2].date() - timedelta(days=30)
+                mes_passado = fim[0][2].date() - timedelta(days = 30)
 
                 inicio = db.consultar("""
                     SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
@@ -178,7 +178,7 @@ class ClanController:
                     ORDER BY n.nome, e.exp_total
                 """, mes_passado)
 
-                if not inicio:
+                if inicio is None:
                     inicio = db.consultar("""
                         SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
                         FROM clans c
@@ -214,7 +214,7 @@ class ClanController:
                     ORDER BY n.nome, e.exp_total
                 """, data_fim)
 
-                if not fim:
+                if fim is None:
                     return -3
                 
                 inicio = db.consultar("""
@@ -231,7 +231,7 @@ class ClanController:
                     ORDER BY n.nome, e.exp_total
                 """, data_inicio)
 
-                if not inicio:
+                if inicio is None:
                     return -4
                 
             data_hora_inicio = inicio[0][2].strftime('%d/%m/%Y')
@@ -313,7 +313,7 @@ class ClanController:
             """, inicio, fim)
 
             # DXP começou mas ainda não houve a primeira coleta de XP.
-            if not xp_inicio:
+            if xp_inicio is None:
                 return -3
 
             xp_fim = db.consultar("""
