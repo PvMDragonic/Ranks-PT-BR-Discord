@@ -143,89 +143,43 @@ class ClanController:
         
         try:
             db = Conexao()
+            hoje = datetime.date()
+            query = """
+                SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
+                FROM clans c
+                JOIN (
+                    SELECT DISTINCT ON (id_clan) id_clan, nome
+                    FROM nomes
+                    ORDER BY id_clan, data_alterado DESC
+                ) n ON c.id = n.id_clan
+                JOIN estatisticas e ON c.id = e.id_clan
+                WHERE c.arquivado = false
+                AND date_trunc('day', e.data_hora) = %s
+                ORDER BY n.nome, e.exp_total
+            """
 
             if data_inicio is None:
-                fim = db.consultar("""
-                    SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
-                    FROM clans c
-                    JOIN (
-                        SELECT DISTINCT ON (id_clan) id_clan, nome
-                        FROM nomes
-                        ORDER BY id_clan, data_alterado DESC
-                    ) n ON c.id = n.id_clan
-                    JOIN estatisticas e ON c.id = e.id_clan
-                    WHERE c.arquivado = false 
-                    ORDER BY n.nome, e.data_hora DESC
-                """)
-
-                mes_passado = fim[0][2].date() - timedelta(days = 30)
-
-                inicio = db.consultar("""
-                    SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
-                    FROM clans c
-                    JOIN (
-                        SELECT DISTINCT ON (id_clan) id_clan, nome
-                        FROM nomes
-                        ORDER BY id_clan, data_alterado DESC
-                    ) n ON c.id = n.id_clan
-                    JOIN estatisticas e ON c.id = e.id_clan
-                    WHERE c.arquivado = false
-                    AND date_trunc('day', e.data_hora) = %s
-                    ORDER BY n.nome, e.exp_total
-                """, mes_passado)
+                fim = db.consultar(query, hoje)
+                inicio = db.consultar(query, hoje - timedelta(days = 30))
 
                 if inicio is None:
-                    inicio = db.consultar("""
-                        SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
-                        FROM clans c
-                        JOIN (
-                            SELECT DISTINCT ON (id_clan) id_clan, nome
-                            FROM nomes
-                            ORDER BY id_clan, data_alterado DESC
-                        ) n ON c.id = n.id_clan
-                        JOIN estatisticas e ON c.id = e.id_clan
-                        WHERE c.arquivado = false
-                        ORDER BY n.nome, e.data_hora
-                    """)
+                    for i in range(1, 30):
+                        inicio = db.consultar(query, hoje - timedelta(days = 30 + i))
+                        if not inicio:
+                            break
             else:
-                hoje = datetime.now().date()
-
                 if data_inicio > hoje:
                     return -1
                 
                 if data_fim > hoje:
                     return -2
                 
-                fim = db.consultar("""
-                    SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora 
-                    FROM clans c 
-                    JOIN ( 
-                        SELECT DISTINCT ON (id_clan) id_clan, nome 
-                        FROM nomes 
-                        ORDER BY id_clan, data_alterado DESC 
-                    ) n ON c.id = n.id_clan 
-                    JOIN estatisticas e ON c.id = e.id_clan 
-                    WHERE c.arquivado = false 
-                    AND date_trunc('day', e.data_hora) = %s
-                    ORDER BY n.nome, e.exp_total
-                """, data_fim)
+                fim = db.consultar(query, data_fim)
 
                 if fim is None:
                     return -3
                 
-                inicio = db.consultar("""
-                    SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
-                    FROM clans c
-                    JOIN (
-                        SELECT DISTINCT ON (id_clan) id_clan, nome
-                        FROM nomes
-                        ORDER BY id_clan, data_alterado DESC
-                    ) n ON c.id = n.id_clan
-                    JOIN estatisticas e ON c.id = e.id_clan
-                    WHERE c.arquivado = false
-                    AND date_trunc('day', e.data_hora) = %s
-                    ORDER BY n.nome, e.exp_total
-                """, data_inicio)
+                inicio = db.consultar(query, data_inicio)
 
                 if inicio is None:
                     return -4
@@ -269,24 +223,24 @@ class ClanController:
         try:
             db = Conexao()
 
-            query = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")
+            dxp = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")
 
             # Selecionou um DXP antigo demais que não tá na base de dados.
-            if quantos_atras > (len(query) - 1):
+            if quantos_atras > (len(dxp) - 1):
                 return -1
 
-            double_atual = query[quantos_atras]
+            double_atual = dxp[quantos_atras]
             inicio = double_atual[1]
 
             # Double ainda não passou.
             if inicio > datetime.now():
 
                 # Se o único DXP do banco de dados ainda está pra vir.
-                if len(query) == 1:
+                if len(dxp) == 1:
                     return -2
 
                 # Se há mais de um DXP registrados no banco de dados.
-                ultimo_double = query[quantos_atras + 1]
+                ultimo_double = dxp[quantos_atras + 1]
                 inicio = ultimo_double[1]
                 fim = ultimo_double[2]
 
@@ -294,7 +248,7 @@ class ClanController:
             else:
                 fim = double_atual[2]
                 
-            xp_inicio = db.consultar("""
+            query = """
                 SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
                 FROM clans c
                 JOIN (
@@ -306,25 +260,15 @@ class ClanController:
                 WHERE c.arquivado = false
                 AND (data_hora BETWEEN %s AND %s)
                 ORDER BY n.nome, e.exp_total
-            """, inicio, fim)
+            """
+
+            xp_inicio = db.consultar(query, inicio, fim)
 
             # DXP começou mas ainda não houve a primeira coleta de XP.
             if xp_inicio is None:
                 return -3
 
-            xp_fim = db.consultar("""
-                SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
-                FROM clans c
-                JOIN (
-                    SELECT DISTINCT ON (id_clan) id_clan, nome
-                    FROM nomes
-                    ORDER BY id_clan, data_alterado DESC
-                ) n ON c.id = n.id_clan
-                JOIN estatisticas e ON c.id = e.id_clan
-                WHERE c.arquivado = false
-                AND (data_hora BETWEEN %s AND %s)
-                ORDER BY n.nome, e.exp_total DESC
-            """, inicio, fim)
+            xp_fim = db.consultar(f'{query} DESC', inicio, fim)
 
             # Só houve uma coleta de XP desde o início do Double.
             if xp_inicio == xp_fim:
