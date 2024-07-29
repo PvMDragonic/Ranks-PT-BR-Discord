@@ -94,22 +94,7 @@ class ClanController:
 
         try:
             db = Conexao()
-
-            if data is None:
-                return db.consultar("""
-                    SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
-                    FROM clans c
-                    JOIN (
-                        SELECT DISTINCT ON (id_clan) id_clan, nome
-                        FROM nomes
-                        ORDER BY id_clan, data_alterado DESC
-                    ) n ON c.id = n.id_clan
-                    JOIN estatisticas e ON c.id = e.id_clan
-                    WHERE c.arquivado = false
-                    ORDER BY n.nome, e.data_hora DESC
-                """)
-            
-            return db.consultar("""
+            query = """
                 SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora 
                 FROM clans c
                 JOIN (
@@ -120,7 +105,18 @@ class ClanController:
                 JOIN estatisticas e ON c.id = e.id_clan
                 WHERE c.arquivado = false
                 AND date_trunc('day', e.data_hora) = %s
-            """, data)
+            """
+
+            if data is None:
+                hoje = datetime.now().date()
+                ranking = db.consultar(query, hoje)
+
+                # Comando de 'rank geral' de madrugada, antes da coleta diária.
+                if ranking is None:
+                    return db.consultar(query, hoje - timedelta(days = 1))
+                return ranking
+        
+            return db.consultar(query, data)
         except Exception as e:
             LogModel.adicionar_log(f"[{datetime.now()}] Erro no ranking geral: {e}")
             return None
