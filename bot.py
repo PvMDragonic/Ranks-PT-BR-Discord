@@ -319,7 +319,14 @@ async def rank(ctx, *args):
             data = datetime.now().date()
         else:
             try:
-                data = date(year = int(args[3]), month = int(args[2]), day = int(args[1]))
+                ano = int(args[3])
+                ano += 2000 if ano < 100 else 0
+                if ano < 2000:
+                    return await ctx.message.channel.send(
+                        f"Informe um ano válido. {ctx.message.author.mention}"
+                    )
+
+                data = date(year = ano, month = int(args[2]), day = int(args[1]))
             except (ValueError, IndexError):
                 return await ctx.message.channel.send(
                     f"Use o formato `DD MM AAAA` para representar uma data válida. {ctx.message.author.mention}"
@@ -340,8 +347,22 @@ async def rank(ctx, *args):
             fim = datetime.now().date()
         else:
             try:
-                inicio = date(year = int(args[3]), month = int(args[2]), day = int(args[1]))
-                fim = date(year = int(args[6]), month = int(args[5]), day = int(args[4]))
+                ano_inicio = int(args[3])
+                ano_inicio += 2000 if ano_inicio < 100 else 0
+                if ano_inicio < 2000:
+                    return await ctx.message.channel.send(
+                        f"Informe um ano de início válido. {ctx.message.author.mention}"
+                    )
+                
+                ano_fim = int(args[6])
+                ano_fim += 2000 if ano_fim < 100 else 0
+                if ano_fim < 2000:
+                    return await ctx.message.channel.send(
+                        f"Informe um ano de fim válido. {ctx.message.author.mention}"
+                    )
+
+                inicio = date(year = ano_inicio, month = int(args[2]), day = int(args[1]))
+                fim = date(year = ano_fim, month = int(args[5]), day = int(args[4]))
             except (ValueError, IndexError):
                 return await ctx.message.channel.send(
                     f"Use o formato `DD MM AAAA DD MM AAAA` para representar datas válidas. {ctx.message.author.mention}"
@@ -401,27 +422,28 @@ async def criar(ctx, *args):
         )
 
     try:
-        # o _ é pra desempacotar o 'dxp' que vem junto do comando.
-        _, comeco_dia, comeco_mes, comeco_ano, fim_dia, fim_mes, fim_ano = args
+        # 'args[1:]' elimina o primeiro elemento que é "dxp". 
+        comeco_dia, comeco_mes, comeco_ano, fim_dia, fim_mes, fim_ano = [int(arg) for arg in args[1:]]
+
+        comeco_ano += 2000 if comeco_ano < 100 else 0
+        if comeco_ano < 2000:
+            return await ctx.message.channel.send(
+                f"Informe um ano de início válido. {ctx.message.author.mention}"
+            )
+        
+        fim_ano += 2000 if fim_ano < 100 else 0
+        if fim_ano < 2000:
+            return await ctx.message.channel.send(
+                f"Informe um ano de fim válido. {ctx.message.author.mention}"
+            )
     except ValueError:
         return await ctx.message.channel.send(
             f"Use o formato `@Ranks PT-BR criar dxp DD MM AAAA DD MM AAAA` para registrar um novo DXP! {ctx.message.author.mention}"
         )
     
     try:
-        data_comeco = datetime(
-            int(comeco_ano), 
-            int(comeco_mes), 
-            int(comeco_dia),
-            9, 0, 0
-        )
-
-        data_fim = datetime(
-            int(fim_ano), 
-            int(fim_mes), 
-            int(fim_dia),
-            9, 0, 0
-        )
+        data_comeco = datetime(comeco_ano, comeco_mes, comeco_dia, 9, 0, 0)
+        data_fim = datetime(fim_ano, fim_mes, fim_dia, 9, 0, 0)
     except ValueError:
         return await ctx.message.channel.send(
             f"Você não inseriu uma data correta {ctx.message.author.mention}!"
