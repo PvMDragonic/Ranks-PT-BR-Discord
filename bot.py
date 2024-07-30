@@ -15,6 +15,7 @@ from backend import AdminController
 from backend import LogController
 import nomes_scrapper
 import exp_scrapper
+import dxp_scrapper
 
 with open("token.txt", 'r') as file:
     TOKEN = file.readline()
@@ -83,6 +84,18 @@ def loop_diario():
             except TypeError:
                 # Não há dados no BD para ter 'ultima_coleta_registrada' ou 'dxp_recem_acabou'.
                 await coletar_xp() 
+
+            try:
+                data_comeco, data_fim = dxp_scrapper.procurar_double()
+                if not ClanController.verificar_dxp(data_comeco, data_fim):
+                    if AdminController.adicionar_dxp(data_comeco, data_fim):
+                        LogController.adicionar_log(
+                            f"[{datetime.now()}] registro automático de novo DXP para \
+                            {data_comeco.strftime('%d/%m/%Y')} até \
+                            {data_fim.strftime('%d/%m/%Y')}."
+                        )
+            except ValueError:
+                pass # Nenhum DXP encontrado; jogo que segue.
             
             sleep(tempo_para_nove_horas())
 
