@@ -51,6 +51,7 @@ Para fazer o Ranks PT-BR (Discord) funcionar, os seguintes requisitos são neces
         - [fasttext](https://pypi.org/project/fasttext/) — Wrapper da API feita pelo Facebook para reconhecimento de linguas;
         - [psycopg2](https://pypi.org/project/psycopg/) — Adaptador Postgres para linguagem Python;
         - [XlsxWriter](https://pypi.org/project/XlsxWriter/) — Módulo para escrita de arquivos no formato XLSX Excel 2007;
+        - [MWParserFromHell](https://pypi.org/project/mwparserfromhell/) — Parser para extrair dados via API de MediaWiki;
         - [requests](https://pypi.org/project/requests/) — Biblioteca para requisições HTTP. 
         - [lxml](https://pypi.org/project/lxml/) — Biblioteca para processamento de XML;
 - **Front-end**
