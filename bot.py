@@ -188,12 +188,35 @@ async def dxp(ctx):
     # Double ainda não passou.
     try:
         inicio_dxp = ClanController.resgatar_data_dxp()[1]
-        if inicio_dxp > datetime.now():
+        agora = datetime.now()
+
+        if inicio_dxp > agora:
+            restante = inicio_dxp - agora
+
+            data = f"no dia __{inicio_dxp.strftime('%d/%m/%Y')}__" if restante.days > 0 else "__HOJE__"
+
+            if restante.days >= 2:
+                restante = f"{restante.days} dias e {restante.seconds // 3600} horas"
+            elif restante.days >= 1:
+                restante = f"1 dia e {restante.seconds // 3600} horas"
+            elif restante.seconds > 7200:
+                restante = f"{restante.seconds // 3600} horas"
+            elif restante.seconds > 3600:
+                restante = f"1 hora"
+            elif restante.seconds > 300:   
+                restante = f"{restante.seconds // 60} minutos"
+            else:
+                restante = "Menos de um minuto"
+
             embed = discord.Embed(
-                title = f"O próximo EXP em Dobro se aproxima!", 
-                description = f"O DXP começa em __{inicio_dxp.strftime('%d/%m/%Y')}__ às __09:00__, horário de Brasília (12:00 do jogo).", 
+                title = f"{restante} para o próximo DXP!", 
+                description = f"O evento começa {data} às __09:00__, horário de Brasília (12:00 do jogo).", 
                 color = 0x7a8ff5)
-            embed.add_field(name = "", value = "Para o rank completo do último DXP, use **@Ranks PT-BR rank dxp**.", inline = False)
+            embed.add_field(
+                name = "", 
+                value = "Para o rank completo do último DXP, use **@Ranks PT-BR rank dxp**.", 
+                inline = False
+            )
 
             return await ctx.message.channel.send(embed = embed)
     except TypeError:
