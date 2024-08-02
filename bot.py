@@ -44,19 +44,17 @@ def loop_diario():
         await msg_padrao()
 
     async def asincrono():
+        # Espera o bot iniciar (para não dar erro ao tentar mudar a presença), 
+        # porque esse thread começa a ser executado antes do bot ficar online.
+        sleep(30)
+
         while True:
             if date.today().day == 1 or len(ClanController.resgatar_clans()) == 0:
-                # Espera o bot iniciar (para não dar erro ao tentar mudar a presença).
-                sleep(30)
-
                 await bot.change_presence(activity = discord.Game(name = 'Buscando clãs...'))
                 nomes_scrapper.buscar_clans()
                 await msg_padrao()
 
             if ClanController.dxp_acontecendo():
-                # Evita erro, porque esse thread começa a ser executado antes do bot ficar online.
-                sleep(30) 
-
                 agora = datetime.now()
                 await coletar_xp()
                 
