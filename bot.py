@@ -194,19 +194,22 @@ async def dxp(ctx):
             restante = inicio_dxp - agora
 
             data = f"no dia __{inicio_dxp.strftime('%d/%m/%Y')}__" if restante.days > 0 else "__HOJE__"
+            dias = restante.days
+            horas = restante.seconds // 3600
+            minutos = (restante.seconds % 3600) // 60
 
-            if restante.days >= 2:
-                restante = f"{restante.days} dias e {restante.seconds // 3600} horas"
-            elif restante.days >= 1:
-                restante = f"1 dia e {restante.seconds // 3600} horas"
+            if dias >= 2:
+                restante = f"{dias} dias e {horas} horas"
+            elif dias >= 1:
+                restante = f"1 dia e {horas} hora{'s' if horas > 1 else ''}"
             elif restante.seconds > 7200:
-                restante = f"{restante.seconds // 3600} horas"
+                restante = f"{horas} horas e {minutos} minuto{'s' if minutos > 1 else ''}"
             elif restante.seconds > 3600:
-                restante = f"1 hora"
+                restante = f"1 hora e {minutos} minuto{'s' if minutos > 1 else ''}"
             elif restante.seconds > 300:   
-                restante = f"{restante.seconds // 60} minutos"
+                restante = f"{minutos} minutos"
             else:
-                restante = "Menos de um minuto"
+                restante = "Menos de cinco minutos"
 
             embed = discord.Embed(
                 title = f"{restante} para o próximo DXP!", 
