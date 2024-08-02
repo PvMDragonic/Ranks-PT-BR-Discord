@@ -374,18 +374,22 @@ class ClanController:
         try:
             db = Conexao()
             fim = db.consultar("SELECT data_fim FROM dxp ORDER BY data_comeco DESC LIMIT 1")[0][0]
+            
             restante = fim - datetime.now()
+            dias = restante.days
+            horas = restante.seconds // 3600
+            minutos = (restante.seconds % 3600) // 60
 
-            if restante.days >= 2:
-                return f"{restante.days} dias e {restante.seconds // 3600} horas restantes!"
-            elif restante.days >= 1:
-                return f"1 dia e {restante.seconds // 3600} horas restantes!"
+            if dias >= 2:
+                return f"{dias} dias e {horas} horas restantes!"
+            elif dias >= 1:
+                return f"1 dia e {horas} hora{'s' if horas > 1 else ''} restantes!"
             elif restante.seconds > 7200:
-                return f"{restante.seconds // 3600} horas restantes!"
+                return f"{horas} horas e {minutos} minuto{'s' if minutos > 1 else ''} restantes!"
             elif restante.seconds > 3600:
-                return f"1 hora restante!"
+                return f"1 hora e {minutos} minuto{'s' if minutos > 1 else ''} restantes!"
             elif restante.seconds > 300:   
-                return f"{restante.seconds // 60} minutos restantes!"
+                return f"{minutos} minutos restantes!"
             else:
                 return "Encerramento iminente!"
         except Exception as e:
