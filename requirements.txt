@@ -1,0 +1,9 @@
+psycopg2
+requests
+xlsxwriter
+discord.py
+mwparserfromhell
+lxml
+
+fasttext; sys_platform == "linux"
+fasttext-wheel; sys_platform == "win32"

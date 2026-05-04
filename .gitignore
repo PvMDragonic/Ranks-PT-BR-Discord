@@ -129,4 +129,5 @@ dmypy.json
 .pyre/
 
 # Token file
-*.txt
+token.txt
+log.txt
