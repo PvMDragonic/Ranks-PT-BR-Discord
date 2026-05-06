@@ -5,7 +5,7 @@ class ClanController:
     """Responsável pelos métodos de resgatar e manipular dados de clã(s)."""
 
     @staticmethod
-    def resgatar_clans() -> list:
+    def resgatar_clans() -> list | None:
         """
         Retorna todos os clãs com seus nomes mais recentes.
         
@@ -23,7 +23,7 @@ class ClanController:
             """)
         except Exception as e:
             LogModel.adicionar_log(f"[{datetime.now()}] Erro na consulta de clãs: {e}")
-            return []
+            return None
         finally:
             db.fechar()
 
@@ -143,7 +143,7 @@ class ClanController:
         
         try:
             db = Conexao()
-            hoje = datetime.date()
+            hoje = datetime.now().date()
             query = """
                 SELECT DISTINCT ON (n.nome) n.nome, e.exp_total, e.data_hora
                 FROM clans c
@@ -224,6 +224,8 @@ class ClanController:
             db = Conexao()
 
             dxp = db.consultar("SELECT * FROM dxp ORDER BY data_comeco DESC")
+            if dxp is None: # Database vazia.
+                return 0
 
             # Selecionou um DXP antigo demais que não tá na base de dados.
             if quantos_atras > (len(dxp) - 1):

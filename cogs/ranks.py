@@ -226,6 +226,7 @@ class Ranks(commands.Cog):
 
         query = ClanController.resgatar_rank_dxp(quantos_atras)
         erros = {
+            0: f"Não há dado de DXP algum no banco de dados. {ctx.message.author.mention}",
             -1: f"Não há histórico de um DXP tão antigo assim para exibir; tente um número menor. {ctx.message.author.mention}",
             -2: f"Não há histórico de DXP para exibir; use `@Ranks PT-BR dxp` para ver informações sobre futuros Doubles. {ctx.message.author.mention}",
             -3: f"Não há dados suficientes para gerar um rank ainda; tente novamente dentro de 1 hora. {ctx.message.author.mention}",
