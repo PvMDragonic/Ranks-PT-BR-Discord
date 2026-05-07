@@ -14,10 +14,10 @@ fasttext.FastText.eprint = lambda x: None
 
 # Quantia pra definir o paralelismo dos dados.
 PROCESSOS = 2
-THREADS = 2
+THREADS = 4
 
 def buscar_uid(nome: str) -> str:
-    pagina_clan = f'https://secure.runescape.com/m=clan-hiscores/l=3/a=869/compare.ws?clanName={nome}'
+    pagina_clan = f'https://secure.runescape.com/m=clan-hiscores/compare.ws?clanName={nome}'
     requisicao = requests.get(pagina_clan).content
     conteudo = html.fromstring(requisicao)
     return conteudo.xpath('.//input[@name="clanId"]/@value')[0]
@@ -51,7 +51,6 @@ def validar_ptbr(nomes: str) -> None:
                 sobre = " ".join(conteudo.xpath('.//p[@id="aboutOurClan"]/text()'))
                 lema = " ".join(conteudo.xpath('.//p[@id="ourMotto"]/text()'))[1:-2].replace("\n", " ")
 
-                # Verifica se é clã PT-BR
                 resultado = [
                     ('__label__pt') in MODEL.predict(sobre, k = 1)[0],
                     ('__label__pt') in MODEL.predict(lema, k = 1)[0]
@@ -77,17 +76,13 @@ def encontrar_clans(lista: list) -> None:
     nomes = []
 
     for num in lista:
-        url = f'https://secure.runescape.com/m=clan-hiscores/l=3/a=869/ranking?ranking=xp_total&table=0&page={num}'
+        url = f'https://secure.runescape.com/m=clan-hiscores/ranking?ranking=xp_total&table=0&page={num}'
         requisicao = requests.get(url).content
         pagina = html.fromstring(requisicao)
         
         conteudo = pagina.xpath('.//td[@class="col2"]//a')
-
         for elem in conteudo:
-            temp = elem.get("href")
-            if 'clanName=' in temp:
-                temp = temp.split("clanName=")[1]
-                nomes.append(temp)
+            nomes.append(elem.get("href"))
 
     validar_ptbr(nomes)
 
@@ -98,7 +93,7 @@ def processo(nomes: list) -> None:
         Thread(target = encontrar_clans, args = (nomes[i], )).start()
 
 def buscar_clans() -> None:
-    pagina = html.fromstring(requests.get('https://secure.runescape.com/m=clan-hiscores/l=3/a=869/ranking').content)
+    pagina = html.fromstring(requests.get('https://secure.runescape.com/m=clan-hiscores/ranking').content)
     quantia_paginas = pagina.xpath('.//div[@class="paging"]')
     quantia_paginas = quantia_paginas[0].text_content().split("\n")
 

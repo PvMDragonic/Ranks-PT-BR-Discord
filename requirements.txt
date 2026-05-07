@@ -7,3 +7,4 @@ lxml
 
 fasttext; sys_platform == "linux"
 fasttext-wheel; sys_platform == "win32"
+numpy==1.26.4 # fasttext não suporta NumPy 2.0 em diante.
