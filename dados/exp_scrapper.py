@@ -7,7 +7,7 @@ import time
 from backend import LogController
 from backend import ClanController
 
-def atualizar_exp(clans: list) -> None:
+def atualizar_exp(clans: list[int, str]) -> None:
     estatisticas = []
 
     for (clan_id, clan_nome) in clans:
@@ -15,7 +15,7 @@ def atualizar_exp(clans: list) -> None:
 
         while True:
             try:
-                pagina_clan = f'https://secure.runescape.com/m=clan-hiscores/l=3/a=869/compare.ws?clanName={clan_nome}'
+                pagina_clan = f'https://secure.runescape.com/m=clan-hiscores/compare.ws?clanName={clan_nome}'
                 requisicao = requests.get(pagina_clan).content
                 conteudo = html.fromstring(requisicao)
 
